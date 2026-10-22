@@ -41,3 +41,31 @@ export const updateBookShelf = async (id: string, shelf: Shelf) => {
     body: JSON.stringify({ id, shelf }), 
   });
 };
+
+
+// 3. THÊM SÁCH MỚI (Dành cho Admin)
+export const addNewBook = async (book: Omit<Book, "id">) => {
+  const res = await fetch("/api/books", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(book),
+  });
+  return res.json();
+};
+// Hàm cập nhật toàn bộ thông tin sách (Dành cho Admin)
+export const updateFullBook = async (id: string, bookData: any) => {
+  const res = await fetch(`/api/books/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bookData),
+  });
+  return res.json();
+};
+
+// Hàm xóa vĩnh viễn sách (Dành cho Admin)
+export const deleteBook = async (id: string) => {
+  const res = await fetch(`/api/books/${id}`, {
+    method: "DELETE", // [KEYWORD]: Phương thức DELETE
+  });
+  return res.json();
+};

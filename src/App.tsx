@@ -10,8 +10,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SearchResultsPage from "./components/SearchResultsPage";
 import Navbar from "./components/Navbar";
-import { getBooks, updateBookShelf } from "./api";
 import type { Book, Shelf } from "./types";
+import { getBooks, updateBookShelf, addNewBook, updateFullBook, deleteBook } from "./api";
+import AdminPage from "./components/AdminPage";
 
 function App() {
   // ==============================================================================
@@ -70,6 +71,31 @@ function App() {
       setBooks(data);
     }
   };
+   const loadBooks = async () => { const data = await getBooks(); setBooks(data); };
+  useEffect(() => { loadBooks(); }, []);
+
+  // --- HÀM THÊM SÁCH (Dành cho Admin) ---
+  const handleAddBook = async (newBook: any) => {
+    const res = await addNewBook(newBook);
+    if (res.success) {
+      setBooks(prev => [...prev, res.book]); // Cập nhật UI
+    }
+  };
+
+  // --- HÀM SỬA SÁCH (Dành cho Admin) ---
+  const handleUpdateBook = async (id: string, bookData: any) => {
+    await updateFullBook(id, bookData);
+    // [LOGIC]: Tải lại danh sách để đồng bộ chính xác các trường thông tin đã sửa.
+    loadBooks();
+  };
+
+  // --- HÀM XÓA SÁCH (Dành cho Admin) ---
+  const handleDeleteBook = async (id: string) => {
+    // 1. Cập nhật giao diện ngay lập tức (Xóa khỏi mảng)
+    setBooks(prev => prev.filter(b => b.id !== id));
+    // 2. Gọi API xóa khỏi Database
+    await deleteBook(id);
+  };
 
   // ==============================================================================
   // 3. GIAO DIỆN VÀ ĐIỀU HƯỚNG (ROUTER)
@@ -96,6 +122,16 @@ function App() {
           path="/search" 
           element={<SearchResultsPage onShelfChange={handleShelfChange} />} 
         />
+
+         {/* TRUYỀN CÁC HÀM XUỐNG TRANG ADMIN */}
+        <Route path="/admin" element={
+          <AdminPage 
+            books={books} 
+            onAddBook={handleAddBook} 
+            onUpdateBook={handleUpdateBook} 
+            onDeleteBook={handleDeleteBook} 
+          />
+        } />
       </Routes>
       
     </BrowserRouter>

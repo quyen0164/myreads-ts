@@ -28,7 +28,7 @@
 
         /* SIDEBAR */
         .sidebar {
-            width: 320px;
+            width: 340px;
             height: 100vh;
             background: white;
             border-right: 1px solid var(--border);
@@ -53,9 +53,9 @@
 
         /* NỘI DUNG CHÍNH */
         .content {
-            margin-left: 320px;
+            margin-left: 340px;
             padding: 40px 60px;
-            max-width: 1100px;
+            max-width: 1200px;
             width: 100%;
         }
         h1 { font-size: 32px; color: var(--primary); margin-bottom: 10px; }
@@ -138,22 +138,22 @@
         <ul>
             <li><a href="#phase1">GĐ 1: Cấu hình hệ thống</a></li>
             <li><a href="#phase2">GĐ 2: Backend (Database & API)</a></li>
-            <li><a href="#phase3">GĐ 3: Bản thiết kế & Gọi mạng</a></li>
+            <li><a href="#phase3">GĐ 3: Bản thiết kế & Gọi mạng (Types & API)</a></li>
             <li><a href="#phase4">GĐ 4: Bộ não trung tâm (App.tsx)</a></li>
-            <li><a href="#phase5">GĐ 5: Ô tìm kiếm (Debounce)</a></li>
-            <li><a href="#phase6">GĐ 6: Giao diện (Kệ & Sách)</a></li>
-            <li><a href="#phase7">GĐ 7: Nút Dropdown đổi kệ</a></li>
-            <li><a href="#phase8">GĐ 8: Trang kết quả & CSS</a></li>
+            <li><a href="#phase5">GĐ 5: Navbar & Ô tìm kiếm (Debounce)</a></li>
+            <li><a href="#phase6">GĐ 6: Giao diện Trang chủ (Kệ & Sách)</a></li>
+            <li><a href="#phase7">GĐ 7: Trang Admin (Thêm/Sửa/Xóa)</a></li>
+            <li><a href="#phase8">GĐ 8: CSS & Sửa lỗi Font</a></li>
         </ul>
-        <div class="note info" style="margin-top: 30px; font-size: 13px;">
-            <strong>💡 Lưu ý:</strong> Tất cả code đều có comment giải thích chi tiết từng dòng. Hãy đọc kỹ comment để hiểu Logic và Thuật toán!
+        <div class="note success" style="margin-top: 30px; font-size: 13px;">
+            <strong>💡 Mẹo:</strong> Tất cả code đều có comment giải thích chi tiết từng dòng. Hãy đọc kỹ comment để hiểu Logic và Thuật toán!
         </div>
     </div>
 
     <!-- NỘI DUNG -->
     <div class="content">
         <h1>Cẩm Nang MyReads Full-Stack</h1>
-        <p class="subtitle">Bản đầy đủ 100% Comment. Copy và dán theo đúng thứ tự từ trên xuống dưới.</p>
+        <p class="subtitle">Bản đầy đủ 100% Comment (Bao gồm cả trang Admin và Upload ảnh Local).</p>
 
         <!-- GIAI ĐOẠN 1 -->
         <section id="phase1" class="phase">
@@ -187,7 +187,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true, 
-        // changeOrigin: true -> Tự động đổi header 'Host' của request thành localhost:3001.
       },
     },
   },
@@ -198,7 +197,7 @@ export default defineConfig({
         <!-- GIAI ĐOẠN 2 -->
         <section id="phase2" class="phase">
             <h2><span class="step-num">2</span> Backend (Database & API)</h2>
-            <p>Tạo file <code>server/index.js</code>.</p>
+            <p>Tạo file <code>server/index.js</code>. Đã bao gồm API cho Admin và cấu hình nhận ảnh Base64.</p>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>import express from "express";
@@ -207,17 +206,15 @@ import cors from "cors";
 
 const app = express();
 // [KEYWORD]: app.use() -> Khai báo Middleware (Phần mềm trung gian chạy trước khi vào API)
-app.use(cors()); // Cho phép React gọi API (Bỏ qua chặn CORS của trình duyệt)
-app.use(express.json()); // Ép kiểu dữ liệu React gửi lên thành JSON để đọc được
+app.use(cors()); 
+// [LOGIC]: Thêm limit: '50mb' để Server chấp nhận ảnh Base64 dung lượng lớn từ Frontend gửi lên.
+app.use(express.json({ limit: '50mb' })); 
 
 // ==============================================================================
 // 1. KHỞI TẠO DATABASE
 // ==============================================================================
-// [LOGIC]: new Database("myreads.db") -> Tìm file myreads.db. Nếu chưa có, nó sẽ TỰ ĐỘNG TẠO RA file này.
 const db = new Database("myreads.db");
 
-// [KEYWORD]: db.exec() -> Chạy một câu lệnh SQL trực tiếp (không cần trả về kết quả)
-// [LOGIC]: Tạo bảng 'books' gồm 5 cột. Nếu bảng đã có rồi thì bỏ qua (IF NOT EXISTS).
 db.exec(`
   CREATE TABLE IF NOT EXISTS books (
     id TEXT PRIMARY KEY,
@@ -231,14 +228,9 @@ db.exec(`
 // ==============================================================================
 // 2. NẠP DỮ LIỆU MẪU (CHỈ NẠP 1 LẦN)
 // ==============================================================================
-// [LOGIC]: db.prepare().get() -> Lấy ra 1 dòng dữ liệu đầu tiên (để đếm số lượng sách).
 const countRow = db.prepare("SELECT COUNT(*) as count FROM books").get();
 
 if (countRow.count === 0) {
-  console.log("⏳ Database trống, đang nạp 12 cuốn sách mẫu...");
-  
-  // [KEYWORD]: prepare() -> Biên dịch sẵn câu lệnh SQL để chạy nhiều lần cho nhanh.
-  // Dấu chấm hỏi (?) là các biến sẽ được điền vào sau (tránh lỗi SQL Injection).
   const insert = db.prepare(`INSERT INTO books (id, title, authors, thumbnail, shelf) VALUES (?, ?, ?, ?, ?)`);
   
   const initialBooks = [
@@ -257,26 +249,20 @@ if (countRow.count === 0) {
   ];
 
   for (const b of initialBooks) {
-    // [LOGIC]: JSON.stringify() -> Biến Mảng thành Chuỗi. 
-    // Vì SQLite không hiểu Mảng (Array). Nó chỉ hiểu Chuỗi (Text).
+    // [LOGIC]: JSON.stringify() -> Biến Mảng thành Chuỗi để lưu vào SQLite.
     const authorsAsString = JSON.stringify(b.authors);
-    
-    // [LOGIC]: insert.run() -> Thực thi câu lệnh SQL và điền các biến vào dấu chấm hỏi (?).
     insert.run(b.id, b.title, authorsAsString, b.thumbnail, b.shelf);
   }
-  console.log("✅ Đã nạp 12 cuốn sách thành công!");
 }
 
 // ==============================================================================
-// 3. HÀM HỖ TRỢ ĐỊNH DẠNG DỮ LIỆU
+// 3. HÀM HỖ TRỢ
 // ==============================================================================
 function formatRows(rows) {
-  // [LOGIC]: .map() -> Tạo ra một mảng mới dựa trên mảng cũ.
-  // Database trả về cột 'authors' dưới dạng chuỗi '["A","B"]'. React cần mảng ["A","B"].
   return rows.map((r) => ({
     id: r.id,
     title: r.title,
-    // [KEYWORD]: JSON.parse() -> Biến chuỗi '["A","B"]' ngược lại thành mảng ["A","B"].
+    // [LOGIC]: JSON.parse() -> Biến chuỗi '["A","B"]' ngược lại thành mảng ["A","B"].
     authors: JSON.parse(r.authors), 
     imageLinks: { thumbnail: r.thumbnail }, 
     shelf: r.shelf,
@@ -287,40 +273,71 @@ function formatRows(rows) {
 // 4. CÁC API ROUTES
 // ==============================================================================
 
-// [GET] /api/books -> Dùng để lấy sách
+// [GET]: Lấy sách & Tìm kiếm
 app.get("/api/books", (req, res) => {
-  // [KEYWORD]: req.query -> Lấy các tham số trên URL (Ví dụ: ?q=Clean -> q = "Clean")
   const q = req.query.q; 
-  
   if (q) {
-    // [LOGIC]: Tìm kiếm tương đối.
-    // [KEYWORD]: LIKE '%...%' -> Tìm chuỗi có chứa từ khóa ở bất kỳ đâu.
-    // Sách "Clean Code" sẽ khớp với "%Clean%".
     const searchTerm = `%${q}%`;
-    
-    // [KEYWORD]: .all() -> Lấy TẤT CẢ các dòng thỏa mãn điều kiện.
     const rows = db.prepare("SELECT * FROM books WHERE title LIKE ? OR authors LIKE ?").all(searchTerm, searchTerm);
     return res.json({ books: formatRows(rows) });
   }
-  
-  // Nếu không có từ khóa (q rỗng), trả về toàn bộ sách
   const rows = db.prepare("SELECT * FROM books").all();
   res.json({ books: formatRows(rows) });
 });
 
-// [PUT] /api/books -> Dùng để cập nhật kệ sách
+// [PUT]: Cập nhật Kệ sách (Dành cho User)
 app.put("/api/books", (req, res) => {
-  // [KEYWORD]: req.body -> Lấy dữ liệu React gửi lên (VD: { id: "1", shelf: "read" })
   const { id, shelf } = req.body; 
-  
-  // [KEYWORD]: .run() -> Thực thi lệnh UPDATE (sửa dữ liệu).
-  // Tìm cuốn sách có id tương ứng, đổi cột shelf thành kệ mới.
   db.prepare("UPDATE books SET shelf = ? WHERE id = ?").run(shelf, id);
-  
   res.json({ success: true });
 });
 
-// Chạy server ở cổng 3001
+// [POST]: Thêm sách mới (Dành cho Admin)
+app.post("/api/books", (req, res) => {
+  const { title, authors, thumbnail, shelf } = req.body;
+  if (!title) return res.status(400).json({ error: "Tên sách không được để trống!" });
+
+  // [THUẬT TOÁN TẠO ID]: Tự sinh ID ngẫu nhiên.
+  const id = crypto.randomUUID();
+  const authorsAsString = JSON.stringify(authors);
+
+  try {
+    db.prepare(`INSERT INTO books (id, title, authors, thumbnail, shelf) VALUES (?, ?, ?, ?, ?)`)
+      .run(id, title, authorsAsString, thumbnail || "", shelf || "none");
+    res.json({ success: true, book: { id, title, authors, imageLinks: { thumbnail }, shelf } });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi thêm sách." });
+  }
+});
+
+// [PUT] /api/books/:id -> Admin sửa toàn bộ thông tin sách
+app.put("/api/books/:id", (req, res) => {
+  const id = req.params.id;
+  const { title, authors, thumbnail, shelf } = req.body;
+
+  try {
+    const authorsAsString = JSON.stringify(authors);
+    db.prepare(`
+      UPDATE books SET title = ?, authors = ?, thumbnail = ?, shelf = ? WHERE id = ?
+    `).run(title, authorsAsString, thumbnail, shelf, id);
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi cập nhật sách." });
+  }
+});
+
+// [DELETE] /api/books/:id -> Admin xóa vĩnh viễn sách
+app.delete("/api/books/:id", (req, res) => {
+  const id = req.params.id;
+  try {
+    db.prepare("DELETE FROM books WHERE id = ?").run(id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi xóa sách." });
+  }
+});
+
 app.listen(3001, () => console.log(`🚀 Backend đang chạy tại http://localhost:3001`));</code></pre>
             </div>
         </section>
@@ -332,15 +349,11 @@ app.listen(3001, () => console.log(`🚀 Backend đang chạy tại http://local
             <h3>1. File `src/types.ts`</h3>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <pre><code>// [NGỮ PHÁP]: Dấu "|" (Union Type) nghĩa là "HOẶC". Biến 'Shelf' CHỈ ĐƯỢC PHÉP nhận 1 trong 4 chuỗi này.
-export type Shelf = "currentlyReading" | "wantToRead" | "read" | "none";
+                <pre><code>export type Shelf = "currentlyReading" | "wantToRead" | "read" | "none";
 
-// [NGỮ PHÁP]: interface -> Định nghĩa cấu trúc của một Object.
 export interface Book {
   id: string;           
   title: string;        
-  
-  // [NGỮ PHÁP]: Dấu "?" (Optional) -> Có cũng được, không có cũng không sao.
   authors?: string[];   
   imageLinks?: {        
     thumbnail: string;  
@@ -354,9 +367,7 @@ export interface Book {
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>import type { Book, Shelf } from "./types";
 
-// [NGỮ PHÁP]: async / await -> Xử lý bất đồng bộ. "Chờ lấy xong dữ liệu rồi mới chạy dòng tiếp theo".
 export const getBooks = async (query?: string): Promise&lt;Book[]&gt; => {
-  // [KEYWORD]: encodeURIComponent() -> Biến dấu cách thành %20 để đưa lên URL an toàn.
   const url = query ? `/api/books?q=${encodeURIComponent(query)}` : `/api/books`;
   const res = await fetch(url);
   const data = await res.json();
@@ -365,12 +376,35 @@ export const getBooks = async (query?: string): Promise&lt;Book[]&gt; => {
 
 export const updateBookShelf = async (id: string, shelf: Shelf) => {
   await fetch("/api/books", {
-    // [KEYWORD]: method: "PUT" -> Báo cho Backend biết đây là lệnh "Cập nhật" (Sửa dữ liệu).
     method: "PUT", 
     headers: { "Content-Type": "application/json" },
-    // [KEYWORD]: JSON.stringify() -> Đóng gói object thành chuỗi để gửi qua mạng.
     body: JSON.stringify({ id, shelf }), 
   });
+};
+
+export const addNewBook = async (book: Omit&lt;Book, "id"&gt;) => {
+  const res = await fetch("/api/books", {
+    method: "POST", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(book),
+  });
+  return res.json();
+};
+
+export const updateFullBook = async (id: string, bookData: any) => {
+  const res = await fetch(`/api/books/${id}`, {
+    method: "PUT", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bookData),
+  });
+  return res.json();
+};
+
+export const deleteBook = async (id: string) => {
+  const res = await fetch(`/api/books/${id}`, {
+    method: "DELETE", 
+  });
+  return res.json();
 };</code></pre>
             </div>
         </section>
@@ -385,45 +419,52 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainPage from "./components/MainPage";
 import SearchResultsPage from "./components/SearchResultsPage";
 import Navbar from "./components/Navbar";
-import { getBooks, updateBookShelf } from "./api";
+import AdminPage from "./components/AdminPage";
+import { getBooks, updateBookShelf, addNewBook, updateFullBook, deleteBook } from "./api";
 import type { Book, Shelf } from "./types";
 
 function App() {
-  // [KEYWORD]: useState -> Tạo ra một "bộ nhớ" (State) cho component.
   const [books, setBooks] = useState&lt;Book[]&gt;([]);
 
   const loadBooks = async () => {
     const data = await getBooks();
-    setBooks(data); 
+    setBooks(data);
   };
 
-  // [KEYWORD]: useEffect -> Chạy một đoạn code sau khi giao diện đã hiển thị xong.
-  // Mảng rỗng [] ở cuối nghĩa là: "Chỉ chạy đúng 1 lần duy nhất khi mở web".
   useEffect(() => {
     loadBooks();
   }, []);
 
-  // ==============================================================================
-  // HÀM XỬ LÝ ĐỔI KỆ SÁCH (OPTIMISTIC UI UPDATE)
-  // ==============================================================================
+  // Hàm đổi kệ (Dành cho User) - OPTIMISTIC UI UPDATE
   const handleShelfChange = async (id: string, newShelf: Shelf) => {
-    // BƯỚC 1: Cập nhật giao diện NGAY LẬP TỨC (Không chờ API trả về để tránh giật lag).
-    setBooks((prevBooks) => {
-      // [LOGIC]: .map() -> Duyệt qua mảng 'prevBooks' (mảng sách cũ).
-      // - Nếu b.id === id (đúng là cuốn sách đang đổi kệ): Trả về một object mới 
-      //   có toàn bộ thuộc tính cũ (...b), nhưng đổi thuộc tính shelf thành 'newShelf'.
-      return prevBooks.map((b) => 
-        b.id === id ? { ...b, shelf: newShelf } : b
-      );
-    });
-    
-    // BƯỚC 2: GỬI XUỐNG DATABASE (Chạy ngầm)
+    setBooks((prev) => prev.map((b) => (b.id === id ? { ...b, shelf: newShelf } : b)));
     try {
-      await updateBookShelf(id, newShelf); 
+      await updateBookShelf(id, newShelf);
     } catch (error) {
-      console.error("Lỗi khi lưu DB:", error);
-      loadBooks(); // Nếu lưu thất bại, tải lại dữ liệu chuẩn
+      loadBooks(); 
     }
+  };
+
+  // Hàm thêm sách (Dành cho Admin)
+  const handleAddBook = async (newBook: any) => {
+    const res = await addNewBook(newBook);
+    if (res.success) {
+      // [THUẬT TOÁN SPREAD (...)]: Tạo mảng mới gồm sách cũ + sách mới.
+      setBooks((prev) => [...prev, res.book]);
+    }
+  };
+
+  // Hàm sửa sách (Dành cho Admin)
+  const handleUpdateBook = async (id: string, bookData: any) => {
+    await updateFullBook(id, bookData);
+    loadBooks(); 
+  };
+
+  // Hàm xóa sách (Dành cho Admin)
+  const handleDeleteBook = async (id: string) => {
+    // [THUẬT TOÁN FILTER]: Lọc bỏ cuốn sách có id vừa xóa khỏi mảng giao diện.
+    setBooks((prev) => prev.filter((b) => b.id !== id));
+    await deleteBook(id); 
   };
 
   return (
@@ -432,6 +473,14 @@ function App() {
       &lt;Routes&gt;
         &lt;Route path="/" element={&lt;MainPage books={books} onShelfChange={handleShelfChange} /&gt;} /&gt;
         &lt;Route path="/search" element={&lt;SearchResultsPage onShelfChange={handleShelfChange} /&gt;} /&gt;
+        &lt;Route path="/admin" element={
+          &lt;AdminPage 
+            books={books} 
+            onAddBook={handleAddBook} 
+            onUpdateBook={handleUpdateBook} 
+            onDeleteBook={handleDeleteBook} 
+          /&gt;
+        } /&gt;
       &lt;/Routes&gt;
     &lt;/BrowserRouter&gt;
   );
@@ -442,8 +491,39 @@ export default App;</code></pre>
 
         <!-- GIAI ĐOẠN 5 -->
         <section id="phase5" class="phase">
-            <h2><span class="step-num">5</span> Ô Tìm Kiếm (Debounce)</h2>
-            <p>Tạo file <code>src/components/SearchBar.tsx</code>.</p>
+            <h2><span class="step-num">5</span> Navbar & Ô tìm kiếm</h2>
+            
+            <h3>1. File `src/components/Navbar.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { Link } from "react-router-dom";
+import SearchBar from "./SearchBar";
+
+export default function Navbar() {
+  return (
+    &lt;header style={{ position: "sticky", top: 0, zIndex: 100, backgroundColor: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e2e8f0", padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "24px" }}&gt;
+      
+      &lt;Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}&gt;
+        &lt;span style={{ fontSize: "28px" }}&gt;📚&lt;/span&gt;
+        &lt;span style={{ fontSize: "22px", fontWeight: "700", color: "#0f172a", letterSpacing: "-0.5px" }}&gt;MyReads&lt;/span&gt;
+      &lt;/Link&gt;
+
+      &lt;div style={{ flex: 1, display: "flex", justifyContent: "center" }}&gt;
+        &lt;SearchBar /&gt;
+      &lt;/div&gt;
+
+      &lt;div style={{ display: "flex", alignItems: "center", gap: "20px" }}&gt;
+        &lt;Link to="/admin" style={{ textDecoration: "none", color: "#475569", fontWeight: "600", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px", padding: "8px 12px", borderRadius: "8px", backgroundColor: "#f1f5f9" }}&gt;
+          ⚙️ Quản Trị
+        &lt;/Link&gt;
+        &lt;div style={{ width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "#3b82f6", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold" }}&gt;U&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+            </div>
+
+            <h3>2. File `src/components/SearchBar.tsx`</h3>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>import { useState, useEffect } from "react";
@@ -456,57 +536,43 @@ export default function SearchBar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState&lt;string[]&gt;([]);
 
-  // ==============================================================================
-  // KỸ THUẬT DEBOUNCE (CHỐNG SPAM API)
-  // ==============================================================================
+  // THUẬT TOÁN DEBOUNCE
   useEffect(() => {
-    if (query.trim().length &lt; 2) {
-      setSuggestions([]);
-      return;
-    }
+    if (query.trim().length &lt; 2) { setSuggestions([]); return; }
 
-    // [KEYWORD]: setTimeout -> Đặt một bộ đếm ngược. Sau 300ms thì mới chạy code bên trong.
     const timer = setTimeout(() => {
       getBooks(query).then((books) => {
-        const titles = books.map((b) => b.title);
-        const authors = books.map((b) => b.authors).flat().filter(Boolean) as string[];
-        const unique = [...new Set([...titles, ...authors])]; // Xóa trùng lặp
-        setSuggestions(unique.slice(0, 6)); 
+        const titles = books.map((b) =&gt; b.title);
+        const authors = books.map((b) =&gt; b.authors).flat().filter(Boolean) as string[];
+        const unique = [...new Set([...titles, ...authors])];
+        setSuggestions(unique.slice(0, 6));
       });
     }, 300);
 
-    // [KEYWORD]: clearTimeout -> Hủy bộ đếm.
-    // Nếu bạn gõ tiếp chữ "a" (trước khi hết 300ms), hàm cleanup này chạy -> Hủy bộ đếm cũ.
-    return () => clearTimeout(timer);
+    return () =&gt; clearTimeout(timer);
   }, [query]);
 
-  const goToResults = (keyword: string) => {
+  const goToResults = (keyword: string) =&gt; {
     const trimmed = keyword.trim();
-    if (trimmed.length &lt; 2) return;
     setShowSuggestions(false);
     navigate(`/search?q=${encodeURIComponent(trimmed)}`);
   };
 
   return (
-    &lt;form onSubmit={(e) => { e.preventDefault(); goToResults(query); }}&gt;
-      &lt;input
-        type="text" value={query}
-        onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
-        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-      /&gt;
-      {showSuggestions && suggestions.length &gt; 0 && (
-        &lt;ul&gt;
-          {suggestions.map((suggestion, index) => (
-            &lt;li 
-              key={index} 
-              // [LOGIC]: onMouseDown chạy TRƯỚC onBlur. Dùng onMouseDown để không bị mất sự kiện click.
-              onMouseDown={(e) => { e.preventDefault(); setQuery(suggestion); goToResults(suggestion); }} 
-            &gt;
-              {suggestion}
-            &lt;/li&gt;
-          ))}
-        &lt;/ul&gt;
-      )}
+    &lt;form onSubmit={(e) =&gt; { e.preventDefault(); goToResults(query); }} style={{ width: "100%", maxWidth: "600px" }}&gt;
+      &lt;div style={{ position: "relative" }}&gt;
+        &lt;input type="text" placeholder="Tìm kiếm..." value={query} onChange={(e) =&gt; { setQuery(e.target.value); setShowSuggestions(true); }} onBlur={() =&gt; setTimeout(() =&gt; setShowSuggestions(false), 200)} style={{ width: "100%", padding: "12px", borderRadius: "99px", border: "1px solid #ccc" }} /&gt;
+        
+        {showSuggestions && suggestions.length &gt; 0 && (
+          &lt;ul style={{ position: "absolute", top: "120%", background: "white", width: "100%", zIndex: 10, borderRadius: "8px", boxShadow: "0 10px 15px rgba(0,0,0,0.1)" }}&gt;
+            {suggestions.map((suggestion, index) =&gt; (
+              &lt;li key={index} onMouseDown={(e) =&gt; { e.preventDefault(); setQuery(suggestion); goToResults(suggestion); }} style={{ padding: "10px", cursor: "pointer" }}&gt;
+                {suggestion}
+              &lt;/li&gt;
+            ))}
+          &lt;/ul&gt;
+        )}
+      &lt;/div&gt;
     &lt;/form&gt;
   );
 }</code></pre>
@@ -515,35 +581,28 @@ export default function SearchBar() {
 
         <!-- GIAI ĐOẠN 6 -->
         <section id="phase6" class="phase">
-            <h2><span class="step-num">6</span> Giao Diện (Kệ & Sách)</h2>
+            <h2><span class="step-num">6</span> Giao Diện Trang Chủ</h2>
             
-            <h3>1. File `src/components/Book.tsx`</h3>
+            <h3>1. File `src/components/MainPage.tsx`</h3>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-                <pre><code>import type { Book as BookType, Shelf } from "../types";
-import ShelfSelector from "./ShelfSelector";
+                <pre><code>import BookShelf from "./BookShelf";
+import type { Book as BookType, Shelf } from "../types";
 
-export default function Book({ book, onShelfChange }: { book: BookType, onShelfChange?: (id: string, s: Shelf) => void }) {
-  // [LOGIC]: Dấu ?. (Optional Chaining). Nếu thiếu imageLinks thì trả về undefined, không báo lỗi.
-  // Dấu || dùng ảnh mặc định nếu thumbnail bị undefined.
-  const thumbnail = book.imageLinks?.thumbnail || "https://via.placeholder.com/128x193?text=No+Image";
-  const authorText = book.authors ? book.authors.join(", ") : "Unknown author";
+export default function MainPage({ books, onShelfChange }: { books: BookType[], onShelfChange: (id: string, s: Shelf) =&gt; void }) {
+  const shelves = [
+    { key: "currentlyReading", title: "📖 Currently Reading" },
+    { key: "wantToRead", title: "⏳ Want to Read" },
+    { key: "read", title: "✅ Read" }
+  ];
 
   return (
-    &lt;div style={{ display: "flex", flexDirection: "column", backgroundColor: "white", borderRadius: "12px", padding: "12px" }}&gt;
-      &lt;div style={{ width: "100%", aspectRatio: "2/3", overflow: "hidden" }}&gt;
-        &lt;img src={thumbnail} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /&gt;
-      &lt;/div&gt;
-      &lt;div style={{ fontWeight: "700", fontSize: "15px" }}&gt;{book.title}&lt;/div&gt;
-      &lt;div style={{ color: "#64748b", fontSize: "13px" }}&gt;{authorText}&lt;/div&gt;
-      &lt;div style={{ marginTop: "auto" }}&gt;
-        {onShelfChange && (
-          &lt;ShelfSelector 
-            currentShelf={book.shelf || "none"} 
-            onSelect={(newShelf) => onShelfChange(book.id, newShelf)} 
-          /&gt;
-        )}
-      &lt;/div&gt;
+    &lt;div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}&gt;
+      {shelves.map((shelf) =&gt; {
+        // [THUẬT TOÁN FILTER]: Lọc sách theo kệ.
+        const shelfBooks = books.filter((b) =&gt; b.shelf === shelf.key);
+        return &lt;BookShelf key={shelf.key} title={shelf.title} books={shelfBooks} onShelfChange={onShelfChange} /&gt;;
+      })}
     &lt;/div&gt;
   );
 }</code></pre>
@@ -555,18 +614,12 @@ export default function Book({ book, onShelfChange }: { book: BookType, onShelfC
                 <pre><code>import Book from "./Book";
 import type { Book as BookType, Shelf } from "../types";
 
-export default function BookShelf({ title, books, onShelfChange }: { title: string, books: BookType[], onShelfChange: (id: string, s: Shelf) => void }) {
+export default function BookShelf({ title, books, onShelfChange }: { title: string, books: BookType[], onShelfChange: (id: string, s: Shelf) =&gt; void }) {
   return (
     &lt;div style={{ marginBottom: "40px" }}&gt;
       &lt;h2&gt;{title}&lt;/h2&gt;
-      &lt;div style={{ 
-        display: "grid", 
-        // [LOGIC]: Tự động tính toán số cột. Mỗi cuốn sách rộng tối thiểu 180px.
-        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", 
-        gap: "24px" 
-      }}&gt;
-        {books.map((b) => (
-          // [KEYWORD]: key={b.id} -> BẮT BUỘC. Giúp React phân biệt các cuốn sách.
+      &lt;div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px" }}&gt;
+        {books.map((b) =&gt; (
           &lt;Book key={b.id} book={b} onShelfChange={onShelfChange} /&gt;
         ))}
       &lt;/div&gt;
@@ -578,51 +631,60 @@ export default function BookShelf({ title, books, onShelfChange }: { title: stri
 
         <!-- GIAI ĐOẠN 7 -->
         <section id="phase7" class="phase">
-            <h2><span class="step-num">7</span> Nút Dropdown Đổi Kệ</h2>
-            <p>Tạo file <code>src/components/ShelfSelector.tsx</code>.</p>
+            <h2><span class="step-num">7</span> Trang Admin (Full Comment)</h2>
+            
+            <h3>1. File `src/components/Book.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import type { Book as BookType, Shelf } from "../types";
+import ShelfSelector from "./ShelfSelector";
+
+export default function Book({ book, onShelfChange }: { book: BookType, onShelfChange?: (id: string, s: Shelf) =&gt; void }) {
+  const thumbnail = book.imageLinks?.thumbnail || "https://via.placeholder.com/128x193?text=No+Image";
+  const authorText = book.authors ? book.authors.join(", ") : "Unknown author";
+
+  return (
+    &lt;div style={{ display: "flex", flexDirection: "column", backgroundColor: "white", borderRadius: "12px", padding: "12px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}&gt;
+      &lt;div style={{ width: "100%", aspectRatio: "2/3", overflow: "hidden", borderRadius: "8px" }}&gt;
+        &lt;img src={thumbnail} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /&gt;
+      &lt;/div&gt;
+      &lt;div style={{ fontWeight: "700", fontSize: "15px", marginTop: "12px" }}&gt;{book.title}&lt;/div&gt;
+      &lt;div style={{ color: "#64748b", fontSize: "13px", marginTop: "4px", marginBottom: "16px" }}&gt;{authorText}&lt;/div&gt;
+      &lt;div style={{ marginTop: "auto" }}&gt;
+        {onShelfChange && &lt;ShelfSelector currentShelf={book.shelf || "none"} onSelect={(newShelf) =&gt; onShelfChange(book.id, newShelf)} /&gt;}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+
+            <h3>2. File `src/components/ShelfSelector.tsx`</h3>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>import { useState, useEffect, useRef } from "react";
 import type { Shelf } from "../types";
 
-export default function ShelfSelector({ currentShelf, onSelect }: { currentShelf: Shelf, onSelect: (s: Shelf) => void }) {
+export default function ShelfSelector({ currentShelf, onSelect }: { currentShelf: Shelf, onSelect: (s: Shelf) =&gt; void }) {
   const [isOpen, setIsOpen] = useState(false);
-  // [KEYWORD]: useRef -> Tạo một "cái móc" để trỏ thẳng vào một thẻ HTML.
   const dropdownRef = useRef&lt;HTMLDivElement&gt;(null);
 
-  // [THUẬT TOÁN]: Click ra ngoài để đóng menu
-  useEffect(() => {
+  useEffect(() =&gt; {
     function handleClickOutside(event: MouseEvent) {
-      // Nếu dropdownRef tồn tại VÀ vị trí click KHÔNG NẰM TRONG dropdownRef -> Đóng menu
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =&gt; document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const labels: Record&lt;Shelf, string&gt; = {
-    currentlyReading: "📖 Đang đọc",
-    wantToRead: "⏳ Sẽ đọc",
-    read: "✅ Đã đọc",
-    none: "❌ Bỏ chọn",
-  };
+  const labels: Record&lt;Shelf, string&gt; = { currentlyReading: "📖 Đang đọc", wantToRead: "⏳ Sẽ đọc", read: "✅ Đã đọc", none: "❌ Bỏ chọn" };
 
   return (
     &lt;div ref={dropdownRef} style={{ position: "relative", width: "100%" }}&gt;
-      &lt;button onClick={() => setIsOpen(!isOpen)}&gt;
-        {labels[currentShelf]}
-      &lt;/button&gt;
+      &lt;button onClick={() =&gt; setIsOpen(!isOpen)} style={{ width: "100%", padding: "8px", cursor: "pointer", borderRadius: "6px" }}&gt;{labels[currentShelf]}&lt;/button&gt;
       {isOpen && (
-        &lt;div style={{ position: "absolute", bottom: "110%", left: 0, width: "100%" }}&gt;
-          {(Object.keys(labels) as Shelf[]).map((shelf) => (
-            &lt;div 
-              key={shelf} 
-              onClick={() => { onSelect(shelf); setIsOpen(false); }} 
-            &gt;
-              {labels[shelf]}
-            &lt;/div&gt;
+        &lt;div style={{ position: "absolute", bottom: "110%", left: 0, width: "100%", background: "white", zIndex: 50, boxShadow: "0 -4px 10px rgba(0,0,0,0.1)" }}&gt;
+          {(Object.keys(labels) as Shelf[]).map((shelf) =&gt; (
+            &lt;div key={shelf} onClick={() =&gt; { onSelect(shelf); setIsOpen(false); }} style={{ padding: "8px 12px", cursor: "pointer", backgroundColor: currentShelf === shelf ? "#eff6ff" : "white" }}&gt;{labels[shelf]}&lt;/div&gt;
           ))}
         &lt;/div&gt;
       )}
@@ -630,13 +692,8 @@ export default function ShelfSelector({ currentShelf, onSelect }: { currentShelf
   );
 }</code></pre>
             </div>
-        </section>
 
-        <!-- GIAI ĐOẠN 8 -->
-        <section id="phase8" class="phase">
-            <h2><span class="step-num">8</span> Trang Kết Quả & Sửa CSS</h2>
-            
-            <h3>1. File `src/components/SearchResultsPage.tsx`</h3>
+            <h3>3. File `src/components/SearchResultsPage.tsx`</h3>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>import { useEffect, useState } from "react";
@@ -645,54 +702,220 @@ import { getBooks } from "../api";
 import Book from "./Book";
 import type { Book as BookType, Shelf } from "../types";
 
-export default function SearchResultsPage({ onShelfChange }: { onShelfChange: (id: string, s: Shelf) => void }) {
+export default function SearchResultsPage({ onShelfChange }: { onShelfChange: (id: string, s: Shelf) =&gt; void }) {
   const [searchParams] = useSearchParams();
-  // [THUẬT TOÁN]: .normalize("NFC") -> Ép chuẩn Unicode, chống lỗi rớt dấu tiếng Việt.
   const query = (searchParams.get("q") || "").normalize("NFC"); 
   const [results, setResults] = useState&lt;BookType[]&gt;([]);
 
-  useEffect(() => {
-    if (query) {
-      getBooks(query).then(setResults);
-    }
+  useEffect(() =&gt; {
+    getBooks(query).then(setResults);
   }, [query]);
 
-  const handleLocalShelfChange = (id: string, newShelf: Shelf) => {
-    setResults(prev => prev.map(b => b.id === id ? { ...b, shelf: newShelf } : b));
+  const handleLocalShelfChange = (id: string, newShelf: Shelf) =&gt; {
+    setResults(prev =&gt; prev.map(b =&gt; b.id === id ? { ...b, shelf: newShelf } : b));
     onShelfChange(id, newShelf);
   };
 
   return (
-    &lt;div style={{ maxWidth: "1280px", margin: "48px auto", padding: "0 32px" }}&gt;
-      &lt;h2&gt;{query ? `Kết quả tìm kiếm cho "${query}"` : "Nhập từ khóa"}&lt;/h2&gt;
-      {results.length &gt; 0 && (
-        &lt;div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px" }}&gt;
-          {results.map((b) => (
-            &lt;Book key={b.id} book={b} onShelfChange={handleLocalShelfChange} /&gt;
-          ))}
-        &lt;/div&gt;
-      )}
+    &lt;div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}&gt;
+      &lt;h2&gt;{query ? `Kết quả cho "${query}"` : "Tất cả sách"}&lt;/h2&gt;
+      &lt;div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px" }}&gt;
+        {results.map((b) =&gt; &lt;Book key={b.id} book={b} onShelfChange={handleLocalShelfChange} /&gt;)}
+      &lt;/div&gt;
     &lt;/div&gt;
   );
 }</code></pre>
             </div>
 
-            <h3>2. File `src/index.css` (Sửa lỗi font)</h3>
+            <h3>4. File `src/components/AdminBookForm.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { useState, useEffect } from "react";
+import type { Book, Shelf } from "../types";
+
+interface Props {
+  initialData?: Book | null;
+  onSave: (data: any) =&gt; void;
+  onCancel: () =&gt; void;
+}
+
+export default function AdminBookForm({ initialData, onSave, onCancel }: Props) {
+  const [title, setTitle] = useState("");
+  const [authors, setAuthors] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
+  const [shelf, setShelf] = useState&lt;Shelf&gt;("wantToRead");
+  const [imagePreview, setImagePreview] = useState("");
+
+  useEffect(() =&gt; {
+    if (initialData) {
+      setTitle(initialData.title);
+      setAuthors(initialData.authors?.join(", ") || "");
+      setShelf(initialData.shelf || "wantToRead");
+      if (initialData.imageLinks?.thumbnail) {
+        setThumbnail(initialData.imageLinks.thumbnail);
+        setImagePreview(initialData.imageLinks.thumbnail);
+      }
+    }
+  }, [initialData]);
+
+  const handleImageUpload = (e: React.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () =&gt; {
+        const base64String = reader.result as string;
+        setThumbnail(base64String);
+        setImagePreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) =&gt; {
+    e.preventDefault();
+    const authorsArray = authors.split(",").map(a =&gt; a.trim()).filter(Boolean);
+    onSave({ title, authors: authorsArray, thumbnail, shelf });
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit} style={{ background: "#f8fafc", padding: "20px", borderRadius: "8px", border: "1px solid #cbd5e1", margin: "10px" }}&gt;
+      &lt;h4 style={{ marginBottom: "15px" }}&gt;{initialData ? "✏️ Sửa Sách" : "➕ Thêm Sách Mới"}&lt;/h4&gt;
+      &lt;div style={{ display: "grid", gap: "15px", gridTemplateColumns: "1fr 1fr" }}&gt;
+        &lt;div style={{ display: "flex", flexDirection: "column", gap: "10px" }}&gt;
+          &lt;div&gt;&lt;label style={{ fontSize: "13px", fontWeight: "bold" }}&gt;Tên sách&lt;/label&gt;&lt;input required value={title} onChange={e =&gt; setTitle(e.target.value)} style={{ width: "100%", padding: "8px" }} /&gt;&lt;/div&gt;
+          &lt;div&gt;&lt;label style={{ fontSize: "13px", fontWeight: "bold" }}&gt;Tác giả&lt;/label&gt;&lt;input value={authors} onChange={e =&gt; setAuthors(e.target.value)} style={{ width: "100%", padding: "8px" }} /&gt;&lt;/div&gt;
+          &lt;div&gt;
+            &lt;label style={{ fontSize: "13px", fontWeight: "bold" }}&gt;Kệ sách&lt;/label&gt;
+            &lt;select value={shelf} onChange={e =&gt; setShelf(e.target.value as Shelf)} style={{ width: "100%", padding: "8px" }}&gt;
+              &lt;option value="currentlyReading"&gt;Đang đọc&lt;/option&gt;&lt;option value="wantToRead"&gt;Sẽ đọc&lt;/option&gt;&lt;option value="read"&gt;Đã đọc&lt;/option&gt;&lt;option value="none"&gt;Bỏ chọn&lt;/option&gt;
+            &lt;/select&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div style={{ display: "flex", flexDirection: "column", gap: "10px" }}&gt;
+          &lt;div&gt;
+            &lt;label style={{ fontSize: "13px", fontWeight: "bold", display: "block", marginBottom: "5px" }}&gt;Ảnh bìa (Local hoặc URL)&lt;/label&gt;
+            &lt;input type="file" accept="image/*" onChange={handleImageUpload} style={{ fontSize: "13px", marginBottom: "10px", display: "block" }} /&gt;
+            &lt;input placeholder="Hoặc dán link ảnh..." value={thumbnail.startsWith('data:') ? '' : thumbnail} onChange={e =&gt; { setThumbnail(e.target.value); setImagePreview(e.target.value); }} style={{ width: "100%", padding: "8px" }} /&gt;
+          &lt;/div&gt;
+          {imagePreview && (
+            &lt;div&gt;&lt;span style={{ fontSize: "12px", color: "#64748b" }}&gt;Xem trước:&lt;/span&gt;&lt;img src={imagePreview} alt="Preview" style={{ display: "block", width: "80px", height: "120px", objectFit: "cover", marginTop: "5px", borderRadius: "4px" }} /&gt;&lt;/div&gt;
+          )}
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div style={{ marginTop: "15px", display: "flex", gap: "10px" }}&gt;
+        &lt;button type="submit" style={{ padding: "8px 16px", background: "#2563eb", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}&gt;Lưu&lt;/button&gt;
+        &lt;button type="button" onClick={onCancel} style={{ padding: "8px 16px", background: "#cbd5e1", border: "none", borderRadius: "4px", cursor: "pointer" }}&gt;Hủy&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+            </div>
+
+            <h3>5. File `src/components/AdminPage.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import React, { useState } from "react";
+import AdminBookForm from "./AdminBookForm";
+import type { Book } from "../types";
+
+interface AdminPageProps {
+  books: Book[];
+  onAddBook: (book: any) =&gt; Promise&lt;void&gt;;
+  onUpdateBook: (id: string, book: any) =&gt; Promise&lt;void&gt;;
+  onDeleteBook: (id: string) =&gt; Promise&lt;void&gt;;
+}
+
+export default function AdminPage({ books, onAddBook, onUpdateBook, onDeleteBook }: AdminPageProps) {
+  const [isAdding, setIsAdding] = useState(false); 
+  const [editingBook, setEditingBook] = useState&lt;Book | null&gt;(null); 
+
+  const handleSave = async (data: any) =&gt; {
+    if (editingBook) {
+      await onUpdateBook(editingBook.id, data);
+      setEditingBook(null); 
+    } else {
+      await onAddBook(data);
+      setIsAdding(false); 
+    }
+  };
+
+  const handleDeleteClick = (id: string, title: string) =&gt; {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn cuốn sách "${title}"?`)) {
+      onDeleteBook(id);
+    }
+  };
+
+  return (
+    &lt;div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}&gt;
+      &lt;div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}&gt;
+        &lt;h1&gt;🛠️ Trang Quản Trị&lt;/h1&gt;
+        &lt;button onClick={() =&gt; { setIsAdding(true); setEditingBook(null); }} style={{ padding: "10px 20px", background: "#10b981", color: "white", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "bold" }}&gt;+ Thêm Sách Mới&lt;/button&gt;
+      &lt;/div&gt;
+
+      {isAdding && (
+        &lt;div style={{ marginBottom: "20px", border: "2px dashed #10b981", borderRadius: "8px" }}&gt;
+          &lt;AdminBookForm initialData={null} onSave={handleSave} onCancel={() =&gt; setIsAdding(false)} /&gt;
+        &lt;/div&gt;
+      )}
+
+      &lt;div style={{ background: "white", borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}&gt;
+        &lt;table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}&gt;
+          &lt;thead style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}&gt;
+            &lt;tr&gt;
+              &lt;th style={{ padding: "12px 16px" }}&gt;Ảnh&lt;/th&gt;&lt;th style={{ padding: "12px 16px" }}&gt;Tên sách&lt;/th&gt;&lt;th style={{ padding: "12px 16px" }}&gt;Tác giả&lt;/th&gt;&lt;th style={{ padding: "12px 16px" }}&gt;Kệ&lt;/th&gt;&lt;th style={{ padding: "12px 16px", textAlign: "right" }}&gt;Hành động&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody&gt;
+            {books.map((book) =&gt; (
+              &lt;React.Fragment key={book.id}&gt;
+                &lt;tr style={{ borderBottom: "1px solid #e2e8f0", background: editingBook?.id === book.id ? "#f1f5f9" : "white" }}&gt;
+                  &lt;td style={{ padding: "12px 16px" }}&gt;&lt;img src={book.imageLinks?.thumbnail} alt="cover" style={{ width: "40px", height: "60px", objectFit: "cover", borderRadius: "4px" }} /&gt;&lt;/td&gt;
+                  &lt;td style={{ padding: "12px 16px", fontWeight: "600" }}&gt;{book.title}&lt;/td&gt;
+                  &lt;td style={{ padding: "12px 16px", color: "#64748b" }}&gt;{book.authors?.join(", ")}&lt;/td&gt;
+                  &lt;td style={{ padding: "12px 16px" }}&gt;{book.shelf}&lt;/td&gt;
+                  &lt;td style={{ padding: "12px 16px", textAlign: "right" }}&gt;
+                    &lt;button onClick={() =&gt; { setEditingBook(book); setIsAdding(false); }} style={{ marginRight: "8px", padding: "6px 12px", background: "#eab308", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}&gt;Sửa&lt;/button&gt;
+                    &lt;button onClick={() =&gt; handleDeleteClick(book.id, book.title)} style={{ padding: "6px 12px", background: "#ef4444", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}&gt;Xóa&lt;/button&gt;
+                  &lt;/td&gt;
+                &lt;/tr&gt;
+                {editingBook?.id === book.id && (
+                  &lt;tr style={{ background: "#f8fafc", borderBottom: "2px solid #cbd5e1" }}&gt;
+                    &lt;td colSpan={5} style={{ padding: 0 }}&gt;
+                      &lt;AdminBookForm initialData={editingBook} onSave={handleSave} onCancel={() =&gt; setEditingBook(null)} /&gt;
+                    &lt;/td&gt;
+                  &lt;/tr&gt;
+                )}
+              &lt;/React.Fragment&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 8 -->
+        <section id="phase8" class="phase">
+            <h2><span class="step-num">8</span> CSS & Sửa lỗi Font</h2>
+            <p>Mở file <code>src/index.css</code>, xóa toàn bộ và thay bằng:</p>
             <div class="code-container">
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 <pre><code>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   font-family: 'Inter', system-ui, sans-serif;
-  /* SỬA LỖI FONT TIẾNG VIỆT: Đưa letter-spacing về normal */
+  /* QUAN TRỌNG: Đưa letter-spacing về normal để không rớt dấu tiếng Việt (Kê ́ t) */
   letter-spacing: normal; 
   background-color: #f8fafc;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }</code></pre>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { min-height: 100vh; }</code></pre>
             </div>
 
             <div class="note success">
-                <strong>🎉 CHÚC MỪNG!</strong> Bạn đã có toàn bộ code kèm comment chi tiết. Hãy F5 trình duyệt và tận hưởng thành quả!
+                <strong>🎉 CHÚC MỪNG!</strong> Bạn đã hoàn thành dự án MyReads Full-Stack với đầy đủ tính năng cho cả User và Admin. Hãy F5 trình duyệt và trải nghiệm!
             </div>
         </section>
     </div>
