@@ -1,4 +1,4 @@
-import {Book, Shelf} from "./types";
+import type {Book, Shelf} from "./types";
 
 const api="https://reactnd-books-api.udacity.com";
 
