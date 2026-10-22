@@ -1,38 +1,38 @@
-// Import Component Book ở bước 2
+// ==============================================================
+// MỤC ĐÍCH: Tạo ra 1 cái kệ (VD: Kệ "Currently Reading").
+// Nó nhận vào tiêu đề kệ và một MẢNG sách.
+// ==============================================================
 import Book from "./Book";
-// Import khuôn mẫu dữ liệu
 import type { Book as BookType } from "../types";
 
-// 1. KHAI BÁO PROPS
 interface BookShelfProps {
-  title: string;     // Tên của kệ (VD: "Currently Reading")
-  books: BookType[]; // Mảng chứa nhiều cuốn sách
+  title: string;     // Tiêu đề của kệ (VD: "Currently Reading")
+  books: BookType[]; // Mảng chứa nhiều cuốn sách thuộc kệ này
 }
 
-// 2. NHẬN PROPS
 function BookShelf({ title, books }: BookShelfProps) {
   return (
     <div style={{ marginBottom: "30px" }}>
       
-      {/* HIỂN THỊ TÊN KỆ */}
+      {/* Hiển thị tiêu đề kệ */}
       <h2 style={{ borderBottom: "2px solid #ccc", paddingBottom: "10px" }}>
         {title}
       </h2>
 
-      {/* KHU VỰC CHỨA SÁCH (Dùng Flexbox để xếp ngang) */}
+      {/* Khu vực chứa sách. Dùng flexbox để xếp các cuốn sách nằm ngang */}
       <div style={{ display: "flex", flexWrap: "wrap", marginTop: "15px" }}>
         
-        {/* 3. LẶP QUA MẢNG SÁCH ĐỂ HIỂN THỊ */}
-        {/* Hàm .map() chạy qua từng cuốn sách trong mảng 'books' */}
+        {/* 
+          Duyệt qua mảng 'books' để vẽ ra từng cuốn.
+          - Mỗi lần lặp, nó lấy ra 1 object sách và gán cho biến 'singleBook'.
+          - Truyền cả object 'singleBook' xuống Component <Book> qua prop 'book'.
+          - key={singleBook.id} là BẮT BUỘC để React phân biệt các cuốn sách khi danh sách thay đổi.
+        */}
         {books.map((singleBook) => (
-          
-          // key={singleBook.id}: React yêu cầu mỗi phần tử trong vòng lặp phải có 1 key duy nhất.
-          // Gọi Component Book và truyền cuốn sách hiện tại vào.
           <Book key={singleBook.id} book={singleBook} />
-          
         ))}
+        
       </div>
-      
     </div>
   );
 }

@@ -1,43 +1,42 @@
-// Import khuôn mẫu Book từ file types.ts (dùng type vì đây chỉ là khuôn mẫu)
+// ==============================================================
+// MỤC ĐÍCH: Nhận dữ liệu của 1 cuốn sách và hiển thị ra giao diện.
+// ==============================================================
+
+// Import khuôn mẫu Book từ file types.ts. 
+// Dùng "as BookType" để đổi tên, tránh nhầm lẫn với Component <Book />.
 import type { Book as BookType } from "../types";
 
-// 1. KHAI BÁO PROPS
-// Đây là danh sách những gì App sẽ truyền vào cho cuốn sách này.
+// 1. Khai báo Props (Những thứ Component Cha sẽ truyền xuống)
 interface BookProps {
-  book: BookType; // Truyền cả 1 object cuốn sách vào
+  book: BookType; // Nhận vào 1 object cuốn sách
 }
 
-// 2. NHẬN PROPS
-// Ta bóc biến 'book' ra khỏi cái hộp props.
+// 2. Hàm Component (Nhận prop 'book' từ tham số)
 function Book({ book }: BookProps) {
   
-  // 3. XỬ LÝ ẢNH BÌA
-  // - book.imageLinks?.thumbnail: Nếu có ảnh thì lấy. Dấu ?. để tránh lỗi nếu không có imageLinks.
-  // - || "link_mặc_định": Nếu ảnh bị undefined (không có), thì lấy ảnh xám mặc định.
+  // 3. Xử lý ảnh bìa:
+  // - book.imageLinks?.thumbnail: Dấu ?. (Optional Chaining) giúp tránh lỗi sập app 
+  //   nếu cuốn sách này không có trường imageLinks.
+  // - || "url...": Nếu ảnh bị undefined (không có), thì dùng ảnh xám mặc định.
   const thumbnail = book.imageLinks?.thumbnail || "https://via.placeholder.com/128x193?text=No+Image";
 
-  // 4. XỬ LÝ TÁC GIẢ
-  // Nếu có mảng authors, dùng .join(", ") để nối thành chuỗi. (VD: ["A", "B"] -> "A, B")
-  // Nếu không có, hiển thị "Unknown author".
+  // 4. Xử lý tác giả:
+  // - Nếu book.authors có tồn tại (không phải undefined), dùng .join(", ") để nối mảng thành chuỗi.
+  // - Nếu không có, hiển thị "Unknown author".
   const authorText = book.authors ? book.authors.join(", ") : "Unknown author";
 
   return (
-    // Thẻ div bao ngoài cùng của 1 cuốn sách
     <div style={{ width: "128px", margin: "10px" }}>
       
-      {/* HIỂN THỊ ẢNH BÌA */}
-      <img 
-        src={thumbnail} 
-        alt={book.title} 
-        style={{ width: "128px", height: "193px", objectFit: "cover" }} 
-      />
+      {/* Hiển thị ảnh bìa */}
+      <img src={thumbnail} alt={book.title} style={{ width: "128px", height: "193px", objectFit: "cover" }} />
 
-      {/* HIỂN THỊ TÊN SÁCH */}
+      {/* Hiển thị tên sách */}
       <div style={{ fontWeight: "bold", fontSize: "14px", marginTop: "8px" }}>
         {book.title}
       </div>
 
-      {/* HIỂN THỊ TÁC GIẢ */}
+      {/* Hiển thị tác giả */}
       <div style={{ color: "gray", fontSize: "12px", marginTop: "4px" }}>
         {authorText}
       </div>

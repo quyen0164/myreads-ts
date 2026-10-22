@@ -1,33 +1,46 @@
-// Import Component Kệ sách ở Bước 3
+// ==============================================================
+// MỤC ĐÍCH: Trang chủ của app. Chịu trách nhiệm chia toàn bộ sách
+// thành các kệ khác nhau và hiển thị chúng.
+// ==============================================================
 import BookShelf from "./BookShelf";
 import type { Book as BookType } from "../types";
 
-// 1. KHAI BÁO PROPS
 interface MainPageProps {
-  books: BookType[]; // Toàn bộ sách trong thư viện
+  books: BookType[]; // Nhận toàn bộ sách từ App truyền xuống
 }
 
-// 2. NHẬN PROPS
 function MainPage({ books }: MainPageProps) {
   
-  // 3. CHIA SÁCH THEO KỆ BẰNG HÀM FILTER
-  // Hàm filter trả về mảng mới, chỉ giữ lại những cuốn có shelf tương ứng.
-  const currentlyReading = books.filter((b) => b.shelf === "currentlyReading");
-  const wantToRead = books.filter((b) => b.shelf === "wantToRead");
-  const read = books.filter((b) => b.shelf === "read");
+  // 1. TẠO MẢNG CẤU HÌNH CHO CÁC KỆ SÁCH (Đúng ý tưởng của bạn)
+  // Việc gom vào mảng giúp code sau này dễ bảo trì. Muốn thêm kệ mới chỉ cần thêm 1 dòng.
+  const shelves = [
+    { key: "currentlyReading", title: "Currently Reading" },
+    { key: "wantToRead", title: "Want to Read" },
+    { key: "read", title: "Read" }
+  ];
 
   return (
     <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
       
-      {/* TIÊU ĐỀ TRANG */}
       <h1>MyReads</h1>
 
-      {/* 4. GỌI 3 CÁI KỆ VÀ TRUYỀN MẢNG SÁCH ĐÃ LỌC VÀO */}
-      <BookShelf title="Currently Reading" books={currentlyReading} />
-      
-      <BookShelf title="Want to Read" books={wantToRead} />
-      
-      <BookShelf title="Read" books={read} />
+      {/* 2. LẶP QUA MẢNG CẤU HÌNH ĐỂ VẼ CÁC KỆ SÁCH */}
+      {shelves.map((shelf) => {
+        
+        // 3. LỌC SÁCH CHO KỆ HIỆN TẠI
+        // - Hàm .filter() sẽ chạy qua mảng 'books'.
+        // - Giữ lại những cuốn sách có b.shelf trùng với shelf.key (VD: "currentlyReading").
+        const shelfBooks = books.filter((b) => b.shelf === shelf.key);
+
+        // 4. TRẢ VỀ COMPONENT KỆ SÁCH
+        return (
+          <BookShelf 
+            key={shelf.key}       // Key bắt buộc khi dùng vòng lặp map
+            title={shelf.title}   // Truyền tiêu đề kệ
+            books={shelfBooks}    // Truyền mảng sách đã lọc được
+          />
+        );
+      })}
       
     </div>
   );
