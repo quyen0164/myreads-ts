@@ -1,35 +1,48 @@
-import type {Book, Shelf} from "./types";
+import type { Book, Shelf } from "./types";
 
-const api="https://reactnd-books-api.udacity.com";
+// Địa chỉ server của Udacity
+const api = "https://reactnd-books-api.udacity.com";
 
-let token=localStorage.token;
-if(!token){
-    token=localStorage.token=crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+// 1. TẠO TOKEN (Thẻ căn cước của trình duyệt)
+// Server yêu cầu mỗi máy phải có 1 mã riêng để lưu thư viện sách riêng.
+let token = localStorage.token;
+if (!token) {
+  token = localStorage.token = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
 }
 
-const headers: HeadersInit={
-    Accept: "application/json",
-    Authorization: token,
+// 2. HEADERS: Kẹp thẻ căn cước vào mỗi lần gửi request
+const headers: HeadersInit = {
+  Accept: "application/json",
+  Authorization: token, // Gửi token lên cho server biết mình là ai
 };
-export const getAll=async(): Promise<Book[]>=>{
-    const res=await fetch(`${api}/books`,{headers});
-    const data=await res.json();
-    return data.books;
+
+// 3. HÀM LẤY TOÀN BỘ SÁCH
+export const getAll = async (): Promise<Book[]> => {
+  // fetch: Gọi mạng đến API /books (mặc định là GET)
+  const res = await fetch(`${api}/books`, { headers });
+  // .json(): Bóc lớp vỏ JSON ra lấy dữ liệu
+  const data = await res.json();
+  return data.books;
 };
-export const update= async (book: Book, shelf:Shelf): Promise<any>=>{
-    const res=await fetch(`${api}/books/${book.id}`,{
-        method:"PUT",
-        headers: {...headers,"Content-Type":"application/json"},
-        body:JSON.stringify({shelf}),
-    });
-    return res.json();
+
+// 4. HÀM CẬP NHẬT KỆ SÁCH
+export const update = async (book: Book, shelf: Shelf): Promise<any> => {
+  const res = await fetch(`${api}/books/${book.id}`, {
+    method: "PUT", // PUT nghĩa là "Sửa thông tin"
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ shelf }), // Đóng gói object thành chuỗi JSON để gửi đi
+  });
+  return res.json();
 };
-export const search =async(query: string, maxResults=20): Promise<Book[]>=>{
-    const res= await fetch(`${api}/search`,{
-        method: "POST",
-        headers:{...headers,"Content-Type":"application/json"},
-        body: JSON.stringify({query,maxResults}),
-    });
-    const data=await res.json();
-    return data.error ?[]:data.books;
+
+// 5. HÀM TÌM KIẾM SÁCH TRÊN SERVER THẬT
+export const search = async (query: string, maxResults = 20): Promise<Book[]> => {
+  const res = await fetch(`${api}/search`, {
+    method: "POST", // POST để giấu từ khóa trong body cho an toàn
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ query, maxResults }),
+  });
+  const data = await res.json();
+  // Nếu server báo lỗi (không tìm thấy) -> trả về mảng rỗng. Ngược lại trả về data.books
+  return data.error ? [] : data.books;
 };

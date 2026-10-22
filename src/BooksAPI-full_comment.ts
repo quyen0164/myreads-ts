@@ -4,7 +4,7 @@
 // File này không quan tâm giao diện đẹp hay xấu. Nó chỉ có 1 nhiệm vụ:
 // Cầm dữ liệu từ React -> Gửi lên Server Udacity -> Nhận kết quả trả về.
 
-import { Book, Shelf } from "./types";
+import type { Book, Shelf } from "./types";
 
 const api = "https://reactnd-books-api.udacity.com";
 

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sơ Đồ Hệ Thống MyReads (Full)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f6f8fa; padding: 40px 20px; color: #24292e; line-height: 1.5; }
+  .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+  h1 { text-align: center; color: #0366d6; margin-bottom: 10px; font-size: 2.2em; }
+  .subtitle { text-align: center; color: #586069; margin-bottom: 40px; font-style: italic; }
+  
+  .section-title { font-size: 1.5em; color: #24292e; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; margin-top: 50px; margin-bottom: 20px; }
+  
+  /* CSS cho các khối (Node) */
+  .box { border: 2px solid #d1d5da; border-radius: 8px; padding: 15px; background: #fff; margin: 10px 0; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
+  .box-blue { border-color: #0366d6; background: #f1f8ff; }
+  .box-green { border-color: #28a745; background: #e6ffed; }
+  .box-red { border-color: #d73a49; background: #ffeef0; }
+  .box-yellow { border-color: #d9b600; background: #fff8c5; }
+  .box-purple { border-color: #6f42c1; background: #f3e6ff; }
+  .box-orange { border-color: #f66a0a; background: #fff5b1; }
+  
+  .box-title { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+  .box-sub { font-size: 0.9em; color: #586069; }
+  
+  .arrow { text-align: center; font-size: 24px; color: #586069; margin: 5px 0; line-height: 1; }
+  .arrow-label { font-size: 0.85em; color: #d73a49; background: #ffeef0; padding: 2px 8px; border-radius: 12px; display: inline-block; margin-bottom: 5px; font-weight: bold;}
+  
+  /* Layout cho sơ đồ */
+  .flow-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .flex-row { display: flex; justify-content: center; gap: 20px; width: 100%; align-items: flex-start; }
+  .flex-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+  
+  /* Bảng IF ELSE */
+  .condition-row { display: flex; justify-content: space-around; width: 100%; margin-top: 10px; }
+  .condition-branch { display: flex; flex-direction: column; align-items: center; flex: 1; padding: 10px; }
+  .condition-label-yes { color: #28a745; font-weight: bold; border: 1px solid #28a745; padding: 2px 8px; border-radius: 4px; background: #e6ffed;}
+  .condition-label-no { color: #d73a49; font-weight: bold; border: 1px solid #d73a49; padding: 2px 8px; border-radius: 4px; background: #ffeef0;}
+
+  code { background: rgba(27,31,35,.05); padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; color: #24292e; }
+  .note { background: #e6f4ff; border-left: 4px solid #0366d6; padding: 15px; border-radius: 4px; margin: 20px 0; font-size: 0.95em; }
+  .divider { border-top: 2px dashed #e1e4e8; margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>SƠ ĐỒ HỆ THỐNG MYREADS</h1>
+  <p class="subtitle">Tư duy Top-Down: Từ Khái quát đến Chi tiết (Đã bao gồm Search)</p>
+
+  <!-- ==========================================
+       CẤP 1: KHÁI QUÁT (VĨ MÔ)
+  =========================================== -->
+  <h2 class="section-title">CẤP 1: Cấu trúc tổng thể (Vĩ mô)</h2>
+  <div class="flow-container">
+    <div class="box box-blue" style="width: 400px;">
+      <div class="box-title">Tầng 1: Điểm khởi đầu</div>
+      <div class="box-sub"><code>main.tsx</code> (Kết nối HTML & React)</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-blue" style="width: 400px;">
+      <div class="box-title">Tầng 2: Bộ não (Global State)</div>
+      <div class="box-sub"><code>App.tsx</code> (Giữ data <code>books</code>, Router)</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="flex-row">
+      <div class="box box-green" style="width: 45%;">
+        <div class="box-title">Nhánh 1: Trang chủ</div>
+        <div class="box-sub"><code>MainPage.tsx</code> (Đọc & Hiển thị)</div>
+      </div>
+      <div class="box box-purple" style="width: 45%;">
+        <div class="box-title">Nhánh 2: Trang tìm kiếm</div>
+        <div class="box-sub"><code>SearchPage.tsx</code> (Tìm & Thêm)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ==========================================
+       CẤP 2A: LUỒNG TRANG CHỦ (TRUNG MÔ)
+  =========================================== -->
+  <h2 class="section-title">CẤP 2A: Luồng hiển thị Trang Chủ (MainPage)</h2>
+  <div class="flow-container">
+    <div class="box box-blue" style="width: 500px;">
+      <div class="box-title">App.tsx</div>
+      <div class="box-sub">Truyền prop <code>books</code> (Toàn bộ sách) xuống MainPage</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-green" style="width: 500px;">
+      <div class="box-title">MainPage.tsx</div>
+      <div class="box-sub">Lọc <code>books.filter()</code> chia thành 3 kệ <br> Truyền mảng nhỏ xuống BookShelf</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-red" style="width: 500px;">
+      <div class="box-title">BookShelf.tsx</div>
+      <div class="box-sub">Duyệt <code>books.map()</code> truyền từng cuốn xuống Book</div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-yellow" style="width: 500px;">
+      <div class="box-title">Book.tsx</div>
+      <div class="box-sub">Hiển thị Tên, Tác giả, Ảnh</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ==========================================
+       CẤP 2B: LUỒNG TRANG TÌM KIẾM (TRUNG MÔ)
+  =========================================== -->
+  <h2 class="section-title">CẤP 2B: Luồng Tìm kiếm & Thêm sách (SearchPage)</h2>
+  <div class="flow-container">
+    <div class="box box-purple" style="width: 500px;">
+      <div class="box-title">SearchPage.tsx (Bước 1: Lấy từ khóa)</div>
+      <div class="box-sub">User gõ phím vào ô Input <br> Lưu vào State <code>query</code></div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-orange" style="width: 500px;">
+      <div class="box-title">SearchPage.tsx (Bước 2: Debounce)</div>
+      <div class="box-sub">Đợi 500ms sau khi ngừng gõ <br> Gọi <code>BooksAPI.search(query)</code></div>
+    </div>
+    <div class="arrow">▼</div>
+    <div class="box box-purple" style="width: 500px;">
+      <div class="box-title">SearchPage.tsx (Bước 3: Hiển thị)</div>
+      <div class="box-sub">Lưu kết quả vào State <code>results</code> <br> Gọi <code>&lt;Book /&gt;</code> để vẽ danh sách</div>
+    </div>
+    
+    <div class="arrow" style="margin-top: 20px;">▼</div>
+    <div class="arrow-label" style="background:#f3e6ff; color:#6f42c1;">User bấm đổi kệ sách</div>
+    
+    <div class="box box-blue" style="width: 500px;">
+      <div class="box-title">Quay lại App.tsx (Hàm updateShelf)</div>
+      <div class="box-sub">Gọi <code>BooksAPI.update()</code> <br> Cập nhật lại State <code>books</code> tổng</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ==========================================
+       CẤP 3: CHI TIẾT & XỬ LÝ LỖI (VI MÔ)
+  =========================================== -->
+  <h2 class="section-title">CẤP 3: Chi tiết & Xử lý lỗi (Vi mô)</h2>
+
+  <!-- 3.1: Search - Cái bẫy dữ liệu -->
+  <div class="box" style="width: 100%; max-width: 700px; margin: 0 auto; border-color: #6f42c1;">
+    <div class="box-title" style="color: #6f42c1;">Trạm kiểm tra 1: Gộp kệ sách (Trong SearchPage - Chỗ khó nhất)</div>
+    <div class="box-sub" style="margin-bottom: 10px;">Sách tìm từ API không có thuộc tính <code>shelf</code>. Ta phải tự dò.</div>
+    <div class="condition-row">
+      <div class="condition-branch">
+        <div class="condition-label-yes" style="color: #6f42c1; border-color: #6f42c1; background: #f3e6ff;">ĐÃ CÓ TRONG THƯ VIỆN</div>
+        <div class="arrow">▼</div>
+        <div class="box box-green" style="width: 100%; margin: 0;">Gán <code>shelf</code> từ mảng <code>books</code> tổng vào kết quả</div>
+      </div>
+      <div class="condition-branch">
+        <div class="condition-label-no">CHƯA CÓ</div>
+        <div class="arrow">▼</div>
+        <div class="box box-red" style="width: 100%; margin: 0;">Để nguyên (shelf = undefined / "none")</div>
+      </div>
+    </div>
+  </div>
+  <div style="height: 20px;"></div>
+
+  <!-- 3.2: Search - Bắt lỗi API -->
+  <div class="box" style="width: 100%; max-width: 700px; margin: 0 auto;">
+    <div class="box-title" style="color: #d73a49;">Trạm kiểm tra 2: API bị lỗi (Trong BooksAPI.ts)</div>
+    <div class="box-sub" style="margin-bottom: 10px;">Gõ từ khóa linh tinh (VD: "asdfghj") -> API trả về lỗi.</div>
+    <div class="condition-row">
+      <div class="condition-branch">
+        <div class="condition-label-no">CÓ LỖI (data.error)</div>
+        <div class="arrow">▼</div>
+        <div class="box box-red" style="width: 100%; margin: 0;">Trả về mảng rỗng <code>[]</code> (Không sập app)</div>
+      </div>
+      <div class="condition-branch">
+        <div class="condition-label-yes">THÀNH CÔNG</div>
+        <div class="arrow">▼</div>
+        <div class="box box-green" style="width: 100%; margin: 0;">Trả về mảng <code>data.books</code></div>
+      </div>
+    </div>
+  </div>
+  <div style="height: 20px;"></div>
+
+  <!-- 3.3: Update - Thêm hoặc sửa -->
+  <div class="box" style="width: 100%; max-width: 700px; margin: 0 auto; border-color: #0366d6;">
+    <div class="box-title" style="color: #0366d6;">Trạm kiểm tra 3: Cập nhật State (Trong App.tsx - Hàm updateShelf)</div>
+    <div class="condition-row">
+      <div class="condition-branch" style="border-right: 1px dashed #ccc;">
+        <div class="condition-label-yes" style="color: #0366d6; border-color: #0366d6; background: #f1f8ff;">Sách ĐÃ CÓ trong mảng</div>
+        <div class="arrow">▼</div>
+        <div class="box box-blue" style="width: 100%; margin: 0;">
+          Cập nhật kệ mới <code>.map()</code><br>(Nếu chọn "None" -> <code>.filter()</code> xóa)
+        </div>
+      </div>
+      <div class="condition-branch">
+        <div class="condition-label-no" style="color: #f66a0a; border-color: #f66a0a; background: #fff5b1;">Sách CHƯA CÓ (từ Search)</div>
+        <div class="arrow">▼</div>
+        <div class="box box-orange" style="width: 100%; margin: 0;">
+          Dùng Spread <code>[...prev, new]</code> <br> để thêm sách mới.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>💡 ĐIỂM KHÁC BIỆT GIỮA MAINPAGE VÀ SEARCHPAGE:</b><br>
+    - <b>MainPage</b>: Chỉ <i>Đọc</i> dữ liệu từ App và hiển thị ra.<br>
+    - <b>SearchPage</b>: Vừa <i>Đọc</i> (để hiển thị kết quả), vừa <i>Ghi</i> (gọi API search để lấy dữ liệu mới, và gọi updateShelf để thêm vào thư viện).
+  </div>
+
+</div>
+
+</body>
+</html>
