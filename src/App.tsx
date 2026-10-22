@@ -1,64 +1,101 @@
-// ==============================================================
-// BỘ NÃO CỦA APP (Chứa Mock Data, Router)
-// ==============================================================
-import { useState } from "react";
+// ==============================================================================
+// TẠI SAO CẦN FILE NÀY?
+// - Đây là "Bộ não" (Global State) của toàn bộ ứng dụng.
+// - Nó giữ danh sách toàn bộ sách (books) và cung cấp cho các trang khác.
+// - Nó thiết lập Router (Trình điều hướng) để biết đường dẫn nào hiển thị trang nào.
+// ==============================================================================
+
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainPage from "./components/MainPage";
-import SearchBar from "./components/SearchBar";
 import SearchResultsPage from "./components/SearchResultsPage";
-import type { Book } from "./types";
-
-// 1. MẢNG MOCK DATA CHÍNH (Chứa các cuốn sách để test)
-const MOCK_BOOKS: Book[] = [
-  {
-    id: "1",
-    title: "React Cơ Bản",
-    authors: ["Nguyen Van A"],
-    imageLinks: { thumbnail: "https://via.placeholder.com/128x193?text=React" },
-    shelf: "currentlyReading",
-  },
-  {
-    id: "2",
-    title: "TypeScript Nâng Cao",
-    authors: ["Tran Thi B"],
-    imageLinks: { thumbnail: "https://via.placeholder.com/128x193?text=TS" },
-    shelf: "wantToRead",
-  },
-  {
-    id: "3",
-    title: "JavaScript Thực Chiến",
-    authors: ["Le Van C", "Pham Thi D"],
-    imageLinks: { thumbnail: "https://via.placeholder.com/128x193?text=JS" },
-    shelf: "read",
-  },
-  {
-    id: "4",
-    title: "Sách Chưa Xếp Kệ",
-    authors: ["Hoang Van E"],
-    imageLinks: { thumbnail: "https://via.placeholder.com/128x193?text=New" },
-  },
-];
+import Navbar from "./components/Navbar";
+import { getBooks, updateBookShelf } from "./api";
+import type { Book, Shelf } from "./types";
 
 function App() {
-  // 2. STATE CHỨA TOÀN BỘ SÁCH (Dùng xuyên suốt App)
-  const [books] = useState<Book[]>(MOCK_BOOKS);
+  // ==============================================================================
+  // 1. QUẢN LÝ TRẠNG THÁI (STATE)
+  // ==============================================================================
+  // [NGỮ PHÁP]: useState<Book[]>([]) -> Tạo một bộ nhớ tên là 'books' (mảng sách).
+  // [LOGIC]: Mọi thay đổi về sách (Thêm, xóa, đổi kệ) ĐỀU PHẢI đi qua hàm 'setBooks'.
+  // Khi 'setBooks' được gọi, React sẽ tự động vẽ lại (re-render) toàn bộ giao diện.
+  const [books, setBooks] = useState<Book[]>([]);
 
+  // [NGỮ PHÁP]: useEffect -> Chạy một đoạn code sau khi giao diện đã tải xong.
+  // [LOGIC]: Mảng rỗng [] ở cuối nghĩa là "Chỉ chạy DUY NHẤT 1 LẦN khi mở trang web".
+  useEffect(() => {
+    // [THUẬT TOÁN]: Khi vừa mở web, tự động gọi API lấy toàn bộ sách từ SQLite.
+    const loadInitialBooks = async () => {
+      const data = await getBooks(); 
+      setBooks(data); // Lưu vào bộ nhớ -> Giao diện hiển thị sách.
+    };
+    loadInitialBooks();
+  }, []); 
+
+  // ==============================================================================
+  // 2. HÀM XỬ LÝ ĐỔI KỆ SÁCH (TRÁI TIM CỦA ỨNG DỤNG)
+  // ==============================================================================
+  // [NGỮ PHÁP]: async (id: string, newShelf: Shelf) -> Hàm nhận vào ID sách và Kệ mới.
+  const handleShelfChange = async (id: string, newShelf: Shelf) => {
+    
+    // [THUẬT TOÁN: OPTIMISTIC UI - CẬP NHẬT LẠC QUAN]
+    // [LOGIC]: Tại sao không chờ API lưu xong rồi mới vẽ lại? Vì như thế sẽ bị giật lag.
+    // Ta cập nhật giao diện NGAY LẬP TỨC, rồi âm thầm gửi API sau.
+    setBooks((prevBooks) => {
+      // [NGỮ PHÁP]: .map() -> Duyệt qua mảng sách cũ (prevBooks) để tạo mảng mới.
+      return prevBooks.map((b) => {
+        // [LOGIC]: Nếu đúng là cuốn sách đang được click (b.id === id):
+        // - Dấu ...b (Spread Operator) nghĩa là: "Giữ nguyên toàn bộ thông tin cũ (tên, ảnh...)".
+        // - shelf: newShelf -> Chỉ thay đổi duy nhất thuộc tính 'shelf' thành kệ mới.
+        if (b.id === id) {
+          return { ...b, shelf: newShelf };
+        }
+        // Nếu là cuốn sách khác, giữ nguyên không làm gì cả.
+        return b;
+      });
+    });
+
+    // [THUẬT TOÁN: LƯU VÀO DATABASE (CHẠY NGẦM)]
+    // [NGỮ PHÁP]: try...catch -> Cố gắng chạy code. Nếu có lỗi (rớt mạng) thì nhảy vào catch.
+    try {
+      // Gọi API để lưu xuống SQLite. (Chờ nó lưu xong).
+      await updateBookShelf(id, newShelf);
+      console.log("Đã lưu vào Database thành công!");
+    } catch (error) {
+      console.error("Lỗi khi lưu:", error);
+      // [LOGIC]: Nếu lưu thất bại, ta phải tải lại dữ liệu gốc từ Server 
+      // để giao diện không bị sai lệch so với Database.
+      const data = await getBooks();
+      setBooks(data);
+    }
+  };
+
+  // ==============================================================================
+  // 3. GIAO DIỆN VÀ ĐIỀU HƯỚNG (ROUTER)
+  // ==============================================================================
   return (
-    // 3. BROWSER ROUTER: Quản lý việc chuyển trang (không bị F5)
+    // [NGỮ PHÁP]: BrowserRouter -> Bọc toàn bộ app để kích hoạt tính năng chuyển trang không load lại web.
     <BrowserRouter>
       
-      {/* HEADER: Dùng chung ở mọi trang. Sticky = Dính trên cùng khi scroll */}
-      <header style={{ position: "sticky", top: 0, zIndex: 100, backgroundColor: "white", padding: "15px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-        <SearchBar />
-      </header>
+      {/* Navbar: Thanh điều hướng (Logo + Thanh tìm kiếm). Nằm ngoài Routes nên luôn hiển thị. */}
+      <Navbar />
 
-      {/* NỘI DUNG TRANG: Thay đổi dựa vào URL */}
+      {/* [NGỮ PHÁP]: Routes -> Nơi chứa các tuyến đường. */}
       <Routes>
-        {/* Đường dẫn "/" -> Hiển thị MainPage */}
-        <Route path="/" element={<MainPage books={books} />} />
+        {/* [LOGIC]: Nếu URL là "/" (Trang chủ): Hiển thị MainPage. 
+            Truyền 'books' (mảng sách) và 'handleShelfChange' (hàm đổi kệ) xuống. */}
+        <Route 
+          path="/" 
+          element={<MainPage books={books} onShelfChange={handleShelfChange} />} 
+        />
         
-        {/* Đường dẫn "/search" -> Hiển thị SearchResultsPage. TRUYỀN books XUỐNG ĐÂY */}
-        <Route path="/search" element={<SearchResultsPage books={books} />} />
+        {/* [LOGIC]: Nếu URL là "/search" (Trang tìm kiếm): Hiển thị SearchResultsPage.
+            Truyền 'handleShelfChange' xuống để trang Search cũng đổi kệ được. */}
+        <Route 
+          path="/search" 
+          element={<SearchResultsPage onShelfChange={handleShelfChange} />} 
+        />
       </Routes>
       
     </BrowserRouter>

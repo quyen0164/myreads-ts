@@ -1,43 +1,56 @@
-// ==============================================================
-// MỤC ĐÍCH: Trang chủ của app. Chịu trách nhiệm chia toàn bộ sách
-// thành các kệ khác nhau và hiển thị chúng.
-// ==============================================================
-import BookShelf from "./BookShelf";
-import type { Book as BookType } from "../types";
+// ==============================================================================
+// TẠI SAO CẦN FILE NÀY?
+// - Nhận toàn bộ sách (books) từ App.tsx.
+// - Chia sách vào 3 kệ dựa trên thuộc tính 'shelf'.
+// ==============================================================================
 
+import BookShelf from "./BookShelf";
+import type { Book as BookType, Shelf } from "../types";
+
+// [LOGIC]: Nhận Props từ App.tsx truyền xuống (books và hàm onShelfChange)
 interface MainPageProps {
-  books: BookType[]; // Nhận toàn bộ sách từ App truyền xuống
+  books: BookType[];
+  onShelfChange: (id: string, newShelf: Shelf) => void;
 }
 
-function MainPage({ books }: MainPageProps) {
+function MainPage({ books, onShelfChange }: MainPageProps) {
   
-  // 1. TẠO MẢNG CẤU HÌNH CHO CÁC KỆ SÁCH (Đúng ý tưởng của bạn)
-  // Việc gom vào mảng giúp code sau này dễ bảo trì. Muốn thêm kệ mới chỉ cần thêm 1 dòng.
+  // ==============================================================================
+  // 1. CẤU HÌNH CÁC KỆ SÁCH (CONFIGURATION ARRAY)
+  // ==============================================================================
+  // [THUẬT TOÁN]: Tại sao không viết cứng 3 cái <BookShelf> ra?
+  // Nếu viết cứng, sau này muốn thêm kệ "Đang tìm hiểu", ta phải copy-paste code.
+  // Dùng mảng cấu hình: Sau này thêm kệ mới chỉ cần thêm 1 dòng object vào mảng này.
   const shelves = [
-    { key: "currentlyReading", title: "Currently Reading" },
-    { key: "wantToRead", title: "Want to Read" },
-    { key: "read", title: "Read" }
+    { key: "currentlyReading", title: "📖 Currently Reading" },
+    { key: "wantToRead", title: "⏳ Want to Read" },
+    { key: "read", title: "✅ Read" }
   ];
 
   return (
-    <div style={{ padding: "20px", maxWidth: "1000px", margin: "0 auto" }}>
+    <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
       
-      <h1>MyReads</h1>
-
-      {/* 2. LẶP QUA MẢNG CẤU HÌNH ĐỂ VẼ CÁC KỆ SÁCH */}
+      {/* [THUẬT TOÁN LẶP]: Duyệt qua từng cấu hình kệ sách ở trên. */}
       {shelves.map((shelf) => {
         
-        // 3. LỌC SÁCH CHO KỆ HIỆN TẠI
-        // - Hàm .filter() sẽ chạy qua mảng 'books'.
-        // - Giữ lại những cuốn sách có b.shelf trùng với shelf.key (VD: "currentlyReading").
+        // ==============================================================================
+        // 2. THUẬT TOÁN LỌC DỮ LIỆU (.filter)
+        // ==============================================================================
+        // [LOGIC]: Ví dụ: shelf.key đang là "read". 
+        // Hàm filter sẽ chạy qua mảng 'books' (kho sách tổng). 
+        // Cuốn nào có b.shelf === "read" thì giữ lại, không thì vứt bỏ.
+        // Kết quả 'shelfBooks' chỉ chứa những cuốn sách của kệ "Read".
         const shelfBooks = books.filter((b) => b.shelf === shelf.key);
 
-        // 4. TRẢ VỀ COMPONENT KỆ SÁCH
+        // [NGỮ PHÁP]: Trả về Component <BookShelf>.
+        // - key={shelf.key}: Bắt buộc để React phân biệt các kệ.
+        // - books={shelfBooks}: Truyền mảng sách ĐÃ LỌC xuống cho kệ.
         return (
           <BookShelf 
-            key={shelf.key}       // Key bắt buộc khi dùng vòng lặp map
-            title={shelf.title}   // Truyền tiêu đề kệ
-            books={shelfBooks}    // Truyền mảng sách đã lọc được
+            key={shelf.key} 
+            title={shelf.title} 
+            books={shelfBooks} 
+            onShelfChange={onShelfChange} // Truyền tiếp hàm đổi kệ xuống để các cuốn sách dùng
           />
         );
       })}

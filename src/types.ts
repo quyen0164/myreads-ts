@@ -1,25 +1,29 @@
-// ==============================================================
-// MỤC ĐÍCH: Định nghĩa "bản thiết kế" cho dữ liệu.
-// Giúp TypeScript kiểm tra xem code của bạn có đang dùng sai thuộc tính không.
-// ==============================================================
+// ==============================================================================
+// TẠI SAO CẦN FILE NÀY?
+// - TypeScript cần biết dữ liệu có hình dáng ra sao để báo lỗi nếu bạn gõ sai.
+// - Ví dụ: Bạn gõ book.tittle (thay vì title) -> TypeScript sẽ gạch đỏ báo lỗi ngay.
+// ==============================================================================
 
-// 1. Định nghĩa các Kệ sách hợp lệ.
-// Cú pháp "A | B | C" (Union Type) nghĩa là: Biến này CHỈ ĐƯỢC PHÉP là 1 trong các giá trị này.
-// Nếu bạn gán shelf = "dangdoc" -> TypeScript sẽ báo lỗi đỏ ngay.
+// [NGỮ PHÁP]: export type -> Xuất ra một kiểu dữ liệu mới để file khác dùng chung.
+// [NGỮ PHÁP]: Dấu "|" (Union Type) nghĩa là "HOẶC". 
+// [LOGIC]: Biến 'Shelf' CHỈ ĐƯỢC PHÉP nhận 1 trong 4 chuỗi này. 
+// Nếu bạn gán shelf = "dangdoc" -> Lỗi ngay. Phải là "currentlyReading".
 export type Shelf = "currentlyReading" | "wantToRead" | "read" | "none";
 
-// 2. Định nghĩa cấu trúc của 1 cuốn sách (Book).
-// Dùng interface để khai báo các trường (thuộc tính) mà 1 cuốn sách cần có.
+// [NGỮ PHÁP]: export interface -> Định nghĩa cấu trúc của một Object (Đối tượng).
+// [LOGIC]: Một cuốn sách (Book) bắt buộc phải có id và title.
 export interface Book {
-  id: string;           // Mã định danh duy nhất (bắt buộc)
-  title: string;        // Tên sách (bắt buộc)
+  id: string;           // Mã định danh duy nhất (VD: "1", "2")
+  title: string;        // Tên sách
   
-  // Dấu chấm hỏi "?" nghĩa là "Có thể có hoặc không có" (Optional).
-  // Vì có những cuốn sách không có tác giả, hoặc không có ảnh bìa.
-  authors?: string[];   // Mảng tên tác giả (VD: ["Nguyen Van A", "Tran Thi B"])
-  imageLinks?: {        // Thông tin ảnh bìa
-    thumbnail: string;  // Đường dẫn ảnh
+  // [NGỮ PHÁP]: Dấu "?" (Optional) -> Có cũng được, không có cũng không sao.
+  // [LOGIC]: Có những cuốn sách không có tác giả hoặc không có ảnh bìa. 
+  // Nếu không có dấu "?", TypeScript sẽ bắt bạn phải điền đủ, gây lỗi.
+  authors?: string[];   // Mảng các tác giả (VD: ["Nguyen Van A", "Tran Thi B"])
+  
+  imageLinks?: {        // Object chứa link ảnh
+    thumbnail: string;  
   };
   
-  shelf?: Shelf;        // Cuốn sách này đang nằm ở kệ nào (dùng kiểu Shelf ở trên)
+  shelf?: Shelf;        // Cuốn sách đang nằm ở kệ nào (dùng kiểu Shelf ở trên)
 }

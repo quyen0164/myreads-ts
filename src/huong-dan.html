@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cẩm Nang MyReads Full-Stack (Bản Full Comment)</title>
+    <style>
+        /* CSS CƠ BẢN */
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --code-bg: #1e1e1e;
+            --code-text: #d4d4d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 320px;
+            height: 100vh;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            position: fixed;
+            overflow-y: auto;
+        }
+        .sidebar h2 { font-size: 18px; margin-bottom: 15px; color: var(--primary); }
+        .sidebar ul { list-style: none; }
+        .sidebar li { margin-bottom: 8px; }
+        .sidebar a {
+            text-decoration: none;
+            color: #475569;
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .sidebar a:hover { background: #f1f5f9; color: var(--primary); }
+
+        /* NỘI DUNG CHÍNH */
+        .content {
+            margin-left: 320px;
+            padding: 40px 60px;
+            max-width: 1100px;
+            width: 100%;
+        }
+        h1 { font-size: 32px; color: var(--primary); margin-bottom: 10px; }
+        .subtitle { color: #64748b; margin-bottom: 40px; font-size: 16px; }
+        
+        .phase {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .phase h2 {
+            font-size: 22px;
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .phase h2 .step-num {
+            background: var(--primary);
+            color: white;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 16px;
+        }
+        
+        /* CODE BLOCK */
+        .code-container { position: relative; margin: 20px 0; }
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        code { font-family: inherit; }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* NOTES */
+        .note { padding: 15px; border-radius: 8px; margin: 15px 0; font-size: 15px; }
+        .note.info { background: #eff6ff; border-left: 4px solid var(--primary); color: #1e3a8a; }
+        .note.warning { background: #fffbeb; border-left: 4px solid var(--warning); color: #78350f; }
+        .note.success { background: #f0fdf4; border-left: 4px solid var(--success); color: #14532d; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>Mục Lục</h2>
+        <ul>
+            <li><a href="#phase1">GĐ 1: Cấu hình hệ thống</a></li>
+            <li><a href="#phase2">GĐ 2: Backend (Database & API)</a></li>
+            <li><a href="#phase3">GĐ 3: Bản thiết kế & Gọi mạng</a></li>
+            <li><a href="#phase4">GĐ 4: Bộ não trung tâm (App.tsx)</a></li>
+            <li><a href="#phase5">GĐ 5: Ô tìm kiếm (Debounce)</a></li>
+            <li><a href="#phase6">GĐ 6: Giao diện (Kệ & Sách)</a></li>
+            <li><a href="#phase7">GĐ 7: Nút Dropdown đổi kệ</a></li>
+            <li><a href="#phase8">GĐ 8: Trang kết quả & CSS</a></li>
+        </ul>
+        <div class="note info" style="margin-top: 30px; font-size: 13px;">
+            <strong>💡 Lưu ý:</strong> Tất cả code đều có comment giải thích chi tiết từng dòng. Hãy đọc kỹ comment để hiểu Logic và Thuật toán!
+        </div>
+    </div>
+
+    <!-- NỘI DUNG -->
+    <div class="content">
+        <h1>Cẩm Nang MyReads Full-Stack</h1>
+        <p class="subtitle">Bản đầy đủ 100% Comment. Copy và dán theo đúng thứ tự từ trên xuống dưới.</p>
+
+        <!-- GIAI ĐOẠN 1 -->
+        <section id="phase1" class="phase">
+            <h2><span class="step-num">1</span> Cấu Hình Hệ Thống</h2>
+            
+            <h3>1. File `package.json`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>"scripts": {
+  "dev": "vite",
+  "server": "nodemon server/index.js",
+  "start": "concurrently \"npm run dev\" \"npm run server\"",
+  "build": "tsc && vite build",
+  "preview": "vite preview"
+}</code></pre>
+            </div>
+
+            <h3>2. File `vite.config.ts`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      // [LOGIC]: Trình duyệt chặn request từ cổng 5173 sang cổng 3001 vì lý do bảo mật (CORS).
+      // Vite sẽ đóng vai trò "người vận chuyển". Khi bạn gọi fetch('/api/books'), 
+      // Vite sẽ tự động giấu đi và gửi ngầm request này tới http://localhost:3001/api/books.
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true, 
+        // changeOrigin: true -> Tự động đổi header 'Host' của request thành localhost:3001.
+      },
+    },
+  },
+})</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 2 -->
+        <section id="phase2" class="phase">
+            <h2><span class="step-num">2</span> Backend (Database & API)</h2>
+            <p>Tạo file <code>server/index.js</code>.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import express from "express";
+import Database from "better-sqlite3";
+import cors from "cors";
+
+const app = express();
+// [KEYWORD]: app.use() -> Khai báo Middleware (Phần mềm trung gian chạy trước khi vào API)
+app.use(cors()); // Cho phép React gọi API (Bỏ qua chặn CORS của trình duyệt)
+app.use(express.json()); // Ép kiểu dữ liệu React gửi lên thành JSON để đọc được
+
+// ==============================================================================
+// 1. KHỞI TẠO DATABASE
+// ==============================================================================
+// [LOGIC]: new Database("myreads.db") -> Tìm file myreads.db. Nếu chưa có, nó sẽ TỰ ĐỘNG TẠO RA file này.
+const db = new Database("myreads.db");
+
+// [KEYWORD]: db.exec() -> Chạy một câu lệnh SQL trực tiếp (không cần trả về kết quả)
+// [LOGIC]: Tạo bảng 'books' gồm 5 cột. Nếu bảng đã có rồi thì bỏ qua (IF NOT EXISTS).
+db.exec(`
+  CREATE TABLE IF NOT EXISTS books (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    authors TEXT,
+    thumbnail TEXT,
+    shelf TEXT
+  )
+`);
+
+// ==============================================================================
+// 2. NẠP DỮ LIỆU MẪU (CHỈ NẠP 1 LẦN)
+// ==============================================================================
+// [LOGIC]: db.prepare().get() -> Lấy ra 1 dòng dữ liệu đầu tiên (để đếm số lượng sách).
+const countRow = db.prepare("SELECT COUNT(*) as count FROM books").get();
+
+if (countRow.count === 0) {
+  console.log("⏳ Database trống, đang nạp 12 cuốn sách mẫu...");
+  
+  // [KEYWORD]: prepare() -> Biên dịch sẵn câu lệnh SQL để chạy nhiều lần cho nhanh.
+  // Dấu chấm hỏi (?) là các biến sẽ được điền vào sau (tránh lỗi SQL Injection).
+  const insert = db.prepare(`INSERT INTO books (id, title, authors, thumbnail, shelf) VALUES (?, ?, ?, ?, ?)`);
+  
+  const initialBooks = [
+    { id: "1", title: "Eloquent JavaScript", authors: ["Marijn Haverbeke"], thumbnail: "https://covers.openlibrary.org/b/id/10523338-L.jpg", shelf: "currentlyReading" },
+    { id: "2", title: "Clean Code", authors: ["Robert C. Martin"], thumbnail: "https://covers.openlibrary.org/b/id/135182-L.jpg", shelf: "currentlyReading" },
+    { id: "3", title: "The Pragmatic Programmer", authors: ["Andrew Hunt"], thumbnail: "https://covers.openlibrary.org/b/id/11218663-L.jpg", shelf: "wantToRead" },
+    { id: "4", title: "You Don't Know JS", authors: ["Kyle Simpson"], thumbnail: "https://covers.openlibrary.org/b/id/10909258-L.jpg", shelf: "wantToRead" },
+    { id: "5", title: "Harry Potter và Hòn Đá Phù Thủy", authors: ["J.K. Rowling"], thumbnail: "https://covers.openlibrary.org/b/id/8259449-L.jpg", shelf: "read" },
+    { id: "6", title: "The Hobbit", authors: ["J.R.R. Tolkien"], thumbnail: "https://covers.openlibrary.org/b/id/6979861-L.jpg", shelf: "read" },
+    { id: "7", title: "Sapiens: Lược Sử Loài Người", authors: ["Yuval Noah Harari"], thumbnail: "https://covers.openlibrary.org/b/id/12388200-L.jpg", shelf: "none" },
+    { id: "8", title: "Nhà Giả Kim", authors: ["Paulo Coelho"], thumbnail: "https://covers.openlibrary.org/b/id/8231856-L.jpg", shelf: "none" },
+    { id: "9", title: "Steve Jobs", authors: ["Walter Isaacson"], thumbnail: "https://covers.openlibrary.org/b/id/7251565-L.jpg", shelf: "none" },
+    { id: "10", title: "Thinking, Fast and Slow", authors: ["Daniel Kahneman"], thumbnail: "https://covers.openlibrary.org/b/id/10795644-L.jpg", shelf: "none" },
+    { id: "11", title: "The Great Gatsby", authors: ["F. Scott Fitzgerald"], thumbnail: "https://covers.openlibrary.org/b/id/10594030-L.jpg", shelf: "none" },
+    { id: "12", title: "Dế Mèn Phiêu Lưu Ký", authors: ["Tô Hoài"], thumbnail: "https://covers.openlibrary.org/b/id/10478475-L.jpg", shelf: "none" }
+  ];
+
+  for (const b of initialBooks) {
+    // [LOGIC]: JSON.stringify() -> Biến Mảng thành Chuỗi. 
+    // Vì SQLite không hiểu Mảng (Array). Nó chỉ hiểu Chuỗi (Text).
+    const authorsAsString = JSON.stringify(b.authors);
+    
+    // [LOGIC]: insert.run() -> Thực thi câu lệnh SQL và điền các biến vào dấu chấm hỏi (?).
+    insert.run(b.id, b.title, authorsAsString, b.thumbnail, b.shelf);
+  }
+  console.log("✅ Đã nạp 12 cuốn sách thành công!");
+}
+
+// ==============================================================================
+// 3. HÀM HỖ TRỢ ĐỊNH DẠNG DỮ LIỆU
+// ==============================================================================
+function formatRows(rows) {
+  // [LOGIC]: .map() -> Tạo ra một mảng mới dựa trên mảng cũ.
+  // Database trả về cột 'authors' dưới dạng chuỗi '["A","B"]'. React cần mảng ["A","B"].
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    // [KEYWORD]: JSON.parse() -> Biến chuỗi '["A","B"]' ngược lại thành mảng ["A","B"].
+    authors: JSON.parse(r.authors), 
+    imageLinks: { thumbnail: r.thumbnail }, 
+    shelf: r.shelf,
+  }));
+}
+
+// ==============================================================================
+// 4. CÁC API ROUTES
+// ==============================================================================
+
+// [GET] /api/books -> Dùng để lấy sách
+app.get("/api/books", (req, res) => {
+  // [KEYWORD]: req.query -> Lấy các tham số trên URL (Ví dụ: ?q=Clean -> q = "Clean")
+  const q = req.query.q; 
+  
+  if (q) {
+    // [LOGIC]: Tìm kiếm tương đối.
+    // [KEYWORD]: LIKE '%...%' -> Tìm chuỗi có chứa từ khóa ở bất kỳ đâu.
+    // Sách "Clean Code" sẽ khớp với "%Clean%".
+    const searchTerm = `%${q}%`;
+    
+    // [KEYWORD]: .all() -> Lấy TẤT CẢ các dòng thỏa mãn điều kiện.
+    const rows = db.prepare("SELECT * FROM books WHERE title LIKE ? OR authors LIKE ?").all(searchTerm, searchTerm);
+    return res.json({ books: formatRows(rows) });
+  }
+  
+  // Nếu không có từ khóa (q rỗng), trả về toàn bộ sách
+  const rows = db.prepare("SELECT * FROM books").all();
+  res.json({ books: formatRows(rows) });
+});
+
+// [PUT] /api/books -> Dùng để cập nhật kệ sách
+app.put("/api/books", (req, res) => {
+  // [KEYWORD]: req.body -> Lấy dữ liệu React gửi lên (VD: { id: "1", shelf: "read" })
+  const { id, shelf } = req.body; 
+  
+  // [KEYWORD]: .run() -> Thực thi lệnh UPDATE (sửa dữ liệu).
+  // Tìm cuốn sách có id tương ứng, đổi cột shelf thành kệ mới.
+  db.prepare("UPDATE books SET shelf = ? WHERE id = ?").run(shelf, id);
+  
+  res.json({ success: true });
+});
+
+// Chạy server ở cổng 3001
+app.listen(3001, () => console.log(`🚀 Backend đang chạy tại http://localhost:3001`));</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 3 -->
+        <section id="phase3" class="phase">
+            <h2><span class="step-num">3</span> Bản thiết kế & Gọi mạng</h2>
+            
+            <h3>1. File `src/types.ts`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>// [NGỮ PHÁP]: Dấu "|" (Union Type) nghĩa là "HOẶC". Biến 'Shelf' CHỈ ĐƯỢC PHÉP nhận 1 trong 4 chuỗi này.
+export type Shelf = "currentlyReading" | "wantToRead" | "read" | "none";
+
+// [NGỮ PHÁP]: interface -> Định nghĩa cấu trúc của một Object.
+export interface Book {
+  id: string;           
+  title: string;        
+  
+  // [NGỮ PHÁP]: Dấu "?" (Optional) -> Có cũng được, không có cũng không sao.
+  authors?: string[];   
+  imageLinks?: {        
+    thumbnail: string;  
+  };
+  shelf?: Shelf;        
+}</code></pre>
+            </div>
+
+            <h3>2. File `src/api.ts`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import type { Book, Shelf } from "./types";
+
+// [NGỮ PHÁP]: async / await -> Xử lý bất đồng bộ. "Chờ lấy xong dữ liệu rồi mới chạy dòng tiếp theo".
+export const getBooks = async (query?: string): Promise&lt;Book[]&gt; => {
+  // [KEYWORD]: encodeURIComponent() -> Biến dấu cách thành %20 để đưa lên URL an toàn.
+  const url = query ? `/api/books?q=${encodeURIComponent(query)}` : `/api/books`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.books;
+};
+
+export const updateBookShelf = async (id: string, shelf: Shelf) => {
+  await fetch("/api/books", {
+    // [KEYWORD]: method: "PUT" -> Báo cho Backend biết đây là lệnh "Cập nhật" (Sửa dữ liệu).
+    method: "PUT", 
+    headers: { "Content-Type": "application/json" },
+    // [KEYWORD]: JSON.stringify() -> Đóng gói object thành chuỗi để gửi qua mạng.
+    body: JSON.stringify({ id, shelf }), 
+  });
+};</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 4 -->
+        <section id="phase4" class="phase">
+            <h2><span class="step-num">4</span> Bộ não trung tâm (App.tsx)</h2>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import MainPage from "./components/MainPage";
+import SearchResultsPage from "./components/SearchResultsPage";
+import Navbar from "./components/Navbar";
+import { getBooks, updateBookShelf } from "./api";
+import type { Book, Shelf } from "./types";
+
+function App() {
+  // [KEYWORD]: useState -> Tạo ra một "bộ nhớ" (State) cho component.
+  const [books, setBooks] = useState&lt;Book[]&gt;([]);
+
+  const loadBooks = async () => {
+    const data = await getBooks();
+    setBooks(data); 
+  };
+
+  // [KEYWORD]: useEffect -> Chạy một đoạn code sau khi giao diện đã hiển thị xong.
+  // Mảng rỗng [] ở cuối nghĩa là: "Chỉ chạy đúng 1 lần duy nhất khi mở web".
+  useEffect(() => {
+    loadBooks();
+  }, []);
+
+  // ==============================================================================
+  // HÀM XỬ LÝ ĐỔI KỆ SÁCH (OPTIMISTIC UI UPDATE)
+  // ==============================================================================
+  const handleShelfChange = async (id: string, newShelf: Shelf) => {
+    // BƯỚC 1: Cập nhật giao diện NGAY LẬP TỨC (Không chờ API trả về để tránh giật lag).
+    setBooks((prevBooks) => {
+      // [LOGIC]: .map() -> Duyệt qua mảng 'prevBooks' (mảng sách cũ).
+      // - Nếu b.id === id (đúng là cuốn sách đang đổi kệ): Trả về một object mới 
+      //   có toàn bộ thuộc tính cũ (...b), nhưng đổi thuộc tính shelf thành 'newShelf'.
+      return prevBooks.map((b) => 
+        b.id === id ? { ...b, shelf: newShelf } : b
+      );
+    });
+    
+    // BƯỚC 2: GỬI XUỐNG DATABASE (Chạy ngầm)
+    try {
+      await updateBookShelf(id, newShelf); 
+    } catch (error) {
+      console.error("Lỗi khi lưu DB:", error);
+      loadBooks(); // Nếu lưu thất bại, tải lại dữ liệu chuẩn
+    }
+  };
+
+  return (
+    &lt;BrowserRouter&gt;
+      &lt;Navbar /&gt;
+      &lt;Routes&gt;
+        &lt;Route path="/" element={&lt;MainPage books={books} onShelfChange={handleShelfChange} /&gt;} /&gt;
+        &lt;Route path="/search" element={&lt;SearchResultsPage onShelfChange={handleShelfChange} /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/BrowserRouter&gt;
+  );
+}
+export default App;</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 5 -->
+        <section id="phase5" class="phase">
+            <h2><span class="step-num">5</span> Ô Tìm Kiếm (Debounce)</h2>
+            <p>Tạo file <code>src/components/SearchBar.tsx</code>.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getBooks } from "../api";
+
+export default function SearchBar() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState&lt;string[]&gt;([]);
+
+  // ==============================================================================
+  // KỸ THUẬT DEBOUNCE (CHỐNG SPAM API)
+  // ==============================================================================
+  useEffect(() => {
+    if (query.trim().length &lt; 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    // [KEYWORD]: setTimeout -> Đặt một bộ đếm ngược. Sau 300ms thì mới chạy code bên trong.
+    const timer = setTimeout(() => {
+      getBooks(query).then((books) => {
+        const titles = books.map((b) => b.title);
+        const authors = books.map((b) => b.authors).flat().filter(Boolean) as string[];
+        const unique = [...new Set([...titles, ...authors])]; // Xóa trùng lặp
+        setSuggestions(unique.slice(0, 6)); 
+      });
+    }, 300);
+
+    // [KEYWORD]: clearTimeout -> Hủy bộ đếm.
+    // Nếu bạn gõ tiếp chữ "a" (trước khi hết 300ms), hàm cleanup này chạy -> Hủy bộ đếm cũ.
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const goToResults = (keyword: string) => {
+    const trimmed = keyword.trim();
+    if (trimmed.length &lt; 2) return;
+    setShowSuggestions(false);
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+  };
+
+  return (
+    &lt;form onSubmit={(e) => { e.preventDefault(); goToResults(query); }}&gt;
+      &lt;input
+        type="text" value={query}
+        onChange={(e) => { setQuery(e.target.value); setShowSuggestions(true); }}
+        onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+      /&gt;
+      {showSuggestions && suggestions.length &gt; 0 && (
+        &lt;ul&gt;
+          {suggestions.map((suggestion, index) => (
+            &lt;li 
+              key={index} 
+              // [LOGIC]: onMouseDown chạy TRƯỚC onBlur. Dùng onMouseDown để không bị mất sự kiện click.
+              onMouseDown={(e) => { e.preventDefault(); setQuery(suggestion); goToResults(suggestion); }} 
+            &gt;
+              {suggestion}
+            &lt;/li&gt;
+          ))}
+        &lt;/ul&gt;
+      )}
+    &lt;/form&gt;
+  );
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 6 -->
+        <section id="phase6" class="phase">
+            <h2><span class="step-num">6</span> Giao Diện (Kệ & Sách)</h2>
+            
+            <h3>1. File `src/components/Book.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import type { Book as BookType, Shelf } from "../types";
+import ShelfSelector from "./ShelfSelector";
+
+export default function Book({ book, onShelfChange }: { book: BookType, onShelfChange?: (id: string, s: Shelf) => void }) {
+  // [LOGIC]: Dấu ?. (Optional Chaining). Nếu thiếu imageLinks thì trả về undefined, không báo lỗi.
+  // Dấu || dùng ảnh mặc định nếu thumbnail bị undefined.
+  const thumbnail = book.imageLinks?.thumbnail || "https://via.placeholder.com/128x193?text=No+Image";
+  const authorText = book.authors ? book.authors.join(", ") : "Unknown author";
+
+  return (
+    &lt;div style={{ display: "flex", flexDirection: "column", backgroundColor: "white", borderRadius: "12px", padding: "12px" }}&gt;
+      &lt;div style={{ width: "100%", aspectRatio: "2/3", overflow: "hidden" }}&gt;
+        &lt;img src={thumbnail} alt={book.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /&gt;
+      &lt;/div&gt;
+      &lt;div style={{ fontWeight: "700", fontSize: "15px" }}&gt;{book.title}&lt;/div&gt;
+      &lt;div style={{ color: "#64748b", fontSize: "13px" }}&gt;{authorText}&lt;/div&gt;
+      &lt;div style={{ marginTop: "auto" }}&gt;
+        {onShelfChange && (
+          &lt;ShelfSelector 
+            currentShelf={book.shelf || "none"} 
+            onSelect={(newShelf) => onShelfChange(book.id, newShelf)} 
+          /&gt;
+        )}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+
+            <h3>2. File `src/components/BookShelf.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import Book from "./Book";
+import type { Book as BookType, Shelf } from "../types";
+
+export default function BookShelf({ title, books, onShelfChange }: { title: string, books: BookType[], onShelfChange: (id: string, s: Shelf) => void }) {
+  return (
+    &lt;div style={{ marginBottom: "40px" }}&gt;
+      &lt;h2&gt;{title}&lt;/h2&gt;
+      &lt;div style={{ 
+        display: "grid", 
+        // [LOGIC]: Tự động tính toán số cột. Mỗi cuốn sách rộng tối thiểu 180px.
+        gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", 
+        gap: "24px" 
+      }}&gt;
+        {books.map((b) => (
+          // [KEYWORD]: key={b.id} -> BẮT BUỘC. Giúp React phân biệt các cuốn sách.
+          &lt;Book key={b.id} book={b} onShelfChange={onShelfChange} /&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 7 -->
+        <section id="phase7" class="phase">
+            <h2><span class="step-num">7</span> Nút Dropdown Đổi Kệ</h2>
+            <p>Tạo file <code>src/components/ShelfSelector.tsx</code>.</p>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { useState, useEffect, useRef } from "react";
+import type { Shelf } from "../types";
+
+export default function ShelfSelector({ currentShelf, onSelect }: { currentShelf: Shelf, onSelect: (s: Shelf) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  // [KEYWORD]: useRef -> Tạo một "cái móc" để trỏ thẳng vào một thẻ HTML.
+  const dropdownRef = useRef&lt;HTMLDivElement&gt;(null);
+
+  // [THUẬT TOÁN]: Click ra ngoài để đóng menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      // Nếu dropdownRef tồn tại VÀ vị trí click KHÔNG NẰM TRONG dropdownRef -> Đóng menu
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const labels: Record&lt;Shelf, string&gt; = {
+    currentlyReading: "📖 Đang đọc",
+    wantToRead: "⏳ Sẽ đọc",
+    read: "✅ Đã đọc",
+    none: "❌ Bỏ chọn",
+  };
+
+  return (
+    &lt;div ref={dropdownRef} style={{ position: "relative", width: "100%" }}&gt;
+      &lt;button onClick={() => setIsOpen(!isOpen)}&gt;
+        {labels[currentShelf]}
+      &lt;/button&gt;
+      {isOpen && (
+        &lt;div style={{ position: "absolute", bottom: "110%", left: 0, width: "100%" }}&gt;
+          {(Object.keys(labels) as Shelf[]).map((shelf) => (
+            &lt;div 
+              key={shelf} 
+              onClick={() => { onSelect(shelf); setIsOpen(false); }} 
+            &gt;
+              {labels[shelf]}
+            &lt;/div&gt;
+          ))}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- GIAI ĐOẠN 8 -->
+        <section id="phase8" class="phase">
+            <h2><span class="step-num">8</span> Trang Kết Quả & Sửa CSS</h2>
+            
+            <h3>1. File `src/components/SearchResultsPage.tsx`</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { getBooks } from "../api";
+import Book from "./Book";
+import type { Book as BookType, Shelf } from "../types";
+
+export default function SearchResultsPage({ onShelfChange }: { onShelfChange: (id: string, s: Shelf) => void }) {
+  const [searchParams] = useSearchParams();
+  // [THUẬT TOÁN]: .normalize("NFC") -> Ép chuẩn Unicode, chống lỗi rớt dấu tiếng Việt.
+  const query = (searchParams.get("q") || "").normalize("NFC"); 
+  const [results, setResults] = useState&lt;BookType[]&gt;([]);
+
+  useEffect(() => {
+    if (query) {
+      getBooks(query).then(setResults);
+    }
+  }, [query]);
+
+  const handleLocalShelfChange = (id: string, newShelf: Shelf) => {
+    setResults(prev => prev.map(b => b.id === id ? { ...b, shelf: newShelf } : b));
+    onShelfChange(id, newShelf);
+  };
+
+  return (
+    &lt;div style={{ maxWidth: "1280px", margin: "48px auto", padding: "0 32px" }}&gt;
+      &lt;h2&gt;{query ? `Kết quả tìm kiếm cho "${query}"` : "Nhập từ khóa"}&lt;/h2&gt;
+      {results.length &gt; 0 && (
+        &lt;div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "24px" }}&gt;
+          {results.map((b) => (
+            &lt;Book key={b.id} book={b} onShelfChange={handleLocalShelfChange} /&gt;
+          ))}
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+            </div>
+
+            <h3>2. File `src/index.css` (Sửa lỗi font)</h3>
+            <div class="code-container">
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                <pre><code>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+  /* SỬA LỖI FONT TIẾNG VIỆT: Đưa letter-spacing về normal */
+  letter-spacing: normal; 
+  background-color: #f8fafc;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }</code></pre>
+            </div>
+
+            <div class="note success">
+                <strong>🎉 CHÚC MỪNG!</strong> Bạn đã có toàn bộ code kèm comment chi tiết. Hãy F5 trình duyệt và tận hưởng thành quả!
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function copyCode(btn) {
+            const codeText = btn.nextElementSibling.innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "Đã Copy!";
+                btn.style.background = "#10b981";
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "rgba(255,255,255,0.1)";
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
